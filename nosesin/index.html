@@ -157,6 +157,178 @@
   .trust-card h3{font-size:16px; margin-bottom:10px;}
   .trust-card p{font-size:14px; color:var(--muted);}
 
+  footer{border-top:0.5px solid var(--line); padding:36px 0;}
+  footer .wrap{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;}
+  footer .brand{font-size:15px;}
+  footer p{font-size:13px; color:var(--muted);}
+</style>
+</head>
+<body>
+
+<video id="video" autoplay playsinline muted class="hidden"></video>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-brand">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="49" fill="#14181a" stroke="#5c4a2e" stroke-width="1"/><g transform="translate(38,24) scale(0.62)"><path d="M30,8 C14,35 12,58 18,78 C21,95 30,105 42,110 C52,114 57,120 54,127 C48,134 37,137 27,131 C20,127 18,119 21,110 C17,98 17,85 21,70 C24,53 27,38 31,25 Z" fill="#c99a5b"/></g></svg>
+      NoseSim
+    </div>
+    <h1>ยืนยันตัวตนด้วยใบหน้า</h1>
+    <p class="sub">จัดใบหน้าให้อยู่ในกรอบวงกลม ระบบจะตรวจจับใบหน้าอัตโนมัติ</p>
+
+    <div class="scan-frame" id="scanFrame">
+      <div class="scan-placeholder" id="scanPlaceholder">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M15 8h.01M4 7a2 2 0 012-2h2M20 7a2 2 0 00-2-2h-2M4 17a2 2 0 002 2h2M20 17a2 2 0 01-2 2h-2"/></svg>
+        <span>ยังไม่ได้เปิดกล้อง</span>
+      </div>
+      <svg class="scan-ring" viewBox="0 0 120 120">
+        <circle class="bg" cx="60" cy="60" r="54"/>
+        <circle class="fg" id="ringFg" cx="60" cy="60" r="54" stroke-dasharray="339.3" stroke-dashoffset="339.3"/>
+      </svg>
+      <div class="scan-check" id="scanCheck">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6fae8a" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M7 12l3 3 7-7"/></svg>
+      </div>
+    </div>
+
+    <p class="status-text" id="statusText">พร้อมเริ่มสแกน</p>
+    <button class="btn primary" id="startScanBtn">เริ่มสแกนใบหน้า</button>
+    <button class="skip-link" id="skipBtn">ข้ามการสแกนและเข้าใช้งานเลย</button>
+
+    <p class="login-note"><strong>หมายเหตุ:</strong> การสแกนใบหน้านี้เป็นการสาธิตเพื่อการศึกษา (โปรเจคจำลอง) ไม่ใช่ระบบยืนยันตัวตนที่ปลอดภัยสำหรับใช้งานจริง ภาพจากกล้องประมวลผลในเบราว์เซอร์ของคุณเท่านั้น ไม่ถูกส่งขึ้นเซิร์ฟเวอร์ใดๆ</p>
+  </div>
+</div>
+
+<!-- ============ APP SCREEN ============ -->
+<div id="appScreen" class="hidden">
+  <nav>
+    <div class="wrap">
+      <div class="brand">
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="49" fill="#14181a" stroke="#5c4a2e" stroke-width="1"/><g transform="translate(38,24) scale(0.62)"><path d="M30,8 C14,35 12,58 18,78 C21,95 30,105 42,110 C52,114 57,120 54,127 C48,134 37,137 27,131 C20,127 18,119 21,110 C17,98 17,85 21,70 C24,53 27,38 31,25 Z" fill="#c99a5b"/></g></svg>
+        NoseSim
+      </div>
+      <ul>
+        <li><a href="#tool">ฟิลเตอร์สด</a></li>
+        <li><a href="#analysis">วิเคราะห์โครงหน้า</a></li>
+        <li><a href="#how">วิธีใช้</a></li>
+        <li><a href="#trust">ความเป็นส่วนตัว</a></li>
+      </ul>
+      <span class="nav-status">ยืนยันตัวตนแล้ว</span>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="wrap">
+      <span class="eyebrow">ฟิลเตอร์วิเคราะห์จมูกแบบเรียลไทม์</span>
+      <h1>เปิดกล้อง แล้วดูรูปทรงจมูกใหม่<br><em>ขยับหน้าได้ ฟิลเตอร์ตามหน้าคุณ</em></h1>
+      <p class="lead">ระบบตรวจจับตำแหน่งจมูกจากใบหน้าคุณสด ๆ ผ่านกล้อง แล้วปรับสันและปีกจมูกแบบเรียลไทม์ เหมือนฟิลเตอร์กล้อง ไม่มีการบันทึกหรืออัปโหลดวิดีโอที่ไหนทั้งสิ้น</p>
+
+      <div class="tool" id="tool">
+        <div class="tool-cam-side">
+          <div class="live-frame" id="liveFrame">
+            <div class="live-badge"><span class="dot"></span>LIVE</div>
+            <div class="cam-fallback hidden" id="camFallback">
+              <span>ไม่พบสัญญาณกล้องในหน้านี้ — ลองกลับไปเริ่มสแกนใบหน้าอีกครั้ง</span>
+            </div>
+          </div>
+        </div>
+        <div class="tool-controls">
+          <div>
+            <h3>ปรับความแรงฟิลเตอร์</h3>
+            <p>ระบบตรวจจับตำแหน่งจมูกอัตโนมัติจากจุดสังเกตบนใบหน้า (face landmark)</p>
+          </div>
+          <div class="slider-row">
+            <div class="label-row"><span>สันจมูก / ความโด่ง</span><span id="bridgeValLabel" class="mono">35%</span></div>
+            <input type="range" id="bridgeSlider" min="0" max="100" value="35">
+          </div>
+          <div class="slider-row">
+            <div class="label-row"><span>ความเรียวของปีกจมูก</span><span id="widthValLabel" class="mono">20%</span></div>
+            <input type="range" id="widthSlider" min="0" max="100" value="20">
+          </div>
+          <div class="tool-actions">
+            <button class="btn btn-outline" id="compareBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              กดค้างเทียบหน้าเดิม
+            </button>
+            <button class="btn primary" id="captureBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px; margin-right:4px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              บันทึกรูปภาพ
+            </button>
+            <button class="btn full-width" id="resetBtn">รีเซ็ตฟิลเตอร์</button>
+          </div>
+          <p class="tool-note"><strong>หมายเหตุ:</strong> เป็นการจำลองภาพเพื่อการอ้างอิงเท่านั้น ไม่ใช่ผลลัพธ์ทางการแพทย์จริง ผลจริงขึ้นอยู่กับดุลยพินิจของแพทย์ผู้เชี่ยวชาญ</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="analysis" id="analysis">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">วิเคราะห์โครงหน้า</span>
+        <h2>โครงหน้าแบบคุณ เหมาะกับดั้งทรงไหน</h2>
+        <p>ระบบคำนวณสัดส่วนใบหน้าจากจุดสังเกตเดียวกับที่ใช้ทำฟิลเตอร์ แล้วแนะนำแนวโน้มทรงดั้งที่เข้ากับโครงหน้าคุณ</p>
+      </div>
+      <div class="analysis-card">
+        <div class="analysis-left">
+          <h3>วิเคราะห์ตอนนี้</h3>
+          <p>หันหน้าเข้ากล้องให้เห็นชัด แล้วกดปุ่มด้านล่าง ระบบจะจับภาพสัดส่วนใบหน้าปัจจุบันมาประเมิน</p>
+          <div class="analysis-status" id="analysisStatus"></div>
+          <button class="btn primary" id="analyzeBtn">วิเคราะห์โครงหน้า</button>
+        </div>
+        <div id="analysisRight">
+          <div class="analysis-placeholder" id="analysisPlaceholder">
+            <span>ยังไม่มีผลการวิเคราะห์</span>
+            <span>กดปุ่ม "วิเคราะห์โครงหน้า" เพื่อเริ่ม</span>
+          </div>
+          <div class="analysis-result" id="analysisResult">
+            <div class="ar-block">
+              <div class="ar-label mono">โครงหน้าที่ตรวจพบ</div>
+              <div class="ar-value" id="arShapeName">-</div>
+              <div class="ar-desc" id="arShapeDesc"></div>
+            </div>
+            <div class="ar-block">
+              <div class="ar-label mono">แนวโน้มดั้งที่เข้ากัน</div>
+              <div class="ar-nose">
+                <svg id="arNoseIcon" viewBox="0 0 60 100"><path d="M30,6 C18,30 16,50 22,66 C26,78 32,86 40,90" fill="none" stroke="#c99a5b" stroke-width="2.4" stroke-linecap="round"/></svg>
+                <div>
+                  <div class="ar-value" id="arRecName" style="font-size:16px; margin-bottom:4px;">-</div>
+                  <div class="ar-desc" id="arRecDesc"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="tool-note" style="margin-top:16px; border-top:none; padding-top:0;"><strong>หมายเหตุ:</strong> เป็นการประเมินเบื้องต้นจากสัดส่วนเรขาคณิตของใบหน้าเท่านั้น ไม่ใช่คำแนะนำทางการแพทย์หรือความงามจากผู้เชี่ยวชาญ ใช้เป็นจุดเริ่มต้นก่อนปรึกษาแพทย์เท่านั้น</p>
+    </div>
+  </section>
+
+  <section class="how" id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">วิธีใช้</span>
+        <h2>สามขั้นตอนก่อนถึงห้องตรวจ</h2>
+        <p>ออกแบบให้ใช้เวลาไม่ถึง 2 นาที เพื่อให้คุณมีภาพอ้างอิงไปคุยกับแพทย์ได้ชัดเจนขึ้น</p>
+      </div>
+      <div class="steps">
+        <div class="step"><div class="num mono">01 / สแกนหน้า</div><h3>ยืนยันตัวตนด้วยกล้อง</h3><p>จัดใบหน้าในกรอบวงกลมจนระบบตรวจจับสำเร็จ</p></div>
+        <div class="step"><div class="num mono">02 / เปิดฟิลเตอร์</div><h3>ระบบหาตำแหน่งจมูกอัตโนมัติ</h3><p>ใช้จุดสังเกตบนใบหน้าคำนวณตำแหน่งสันและปีกจมูกแบบสด</p></div>
+        <div class="step"><div class="num mono">03 / ปรับแต่ง</div><h3>เลื่อนแถบเพื่อดูผลทันที</h3><p>ขยับหน้าได้อิสระ ฟิลเตอร์ติดตามใบหน้าคุณแบบเรียลไทม์</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="trust" id="trust">
+    <div class="wrap">
+      <div class="section-head"><span class="eyebrow">ความเป็นส่วนตัว</span><h2>ภาพจากกล้องไม่ไปไหน</h2></div>
+      <div class="trust-grid">
+        <div class="trust-card"><h3>ประมวลผลในเบราว์เซอร์เท่านั้น</h3><p>การตรวจจับใบหน้าและฟิลเตอร์ทั้งหมดทำงานบนอุปกรณ์ของคุณโดยตรง ไม่มีการส่งวิดีโอหรือภาพขึ้นเซิร์ฟเวอร์ และไม่มีการบันทึกไว้ที่ใด</p></div>
+        <div class="trust-card"><h3>ไม่ใช่ระบบยืนยันตัวตนจริง</h3><p>การสแกนหน้าในหน้าล็อกอินเป็นการสาธิตเพื่อการศึกษา และผลลัพธ์ของฟิลเตอร์เป็นเพียงภาพจำลองอ้างอิง ไม่ทดแทนการวินิจฉัยจากแพทย์</p></div>
+      </div>
+    </div>
+  </section>
+
   <footer>
     <div class="wrap">
       <div class="brand"><svg viewBox="0 0 100 100" width="24" height="24"><circle cx="50" cy="50" r="49" fill="#14181a" stroke="#5c4a2e" stroke-width="1"/><g transform="translate(38,24) scale(0.62)"><path d="M30,8 C14,35 12,58 18,78 C21,95 30,105 42,110 C52,114 57,120 54,127 C48,134 37,137 27,131 C20,127 18,119 21,110 C17,98 17,85 21,70 C24,53 27,38 31,25 Z" fill="#c99a5b"/></g></svg>NoseSim</div>
@@ -169,6 +341,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 
 <script>
+/* global FaceMesh, Camera */
 (function(){
   const video = document.getElementById('video');
   const scanFrame = document.getElementById('scanFrame');

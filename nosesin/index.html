@@ -263,12 +263,12 @@
             <button class="upload-btn" id="appUploadBtn" style="width:auto; margin:0; padding:6px 12px; font-size:11px;">อัปโหลดรูป</button>
           </div>
           <div class="slider-row">
-            <div class="label-row"><span>สันจมูก / ความโด่ง</span><span id="bridgeValLabel" class="mono">35%</span></div>
-            <input type="range" id="bridgeSlider" min="0" max="100" value="35">
+            <div class="label-row"><span>สันจมูก / ความโด่ง</span><span id="bridgeValLabel" class="mono">0%</span></div>
+            <input type="range" id="bridgeSlider" min="-100" max="100" value="0">
           </div>
           <div class="slider-row">
-            <div class="label-row"><span>ความเรียวของปีกจมูก</span><span id="widthValLabel" class="mono">20%</span></div>
-            <input type="range" id="widthSlider" min="0" max="100" value="20">
+            <div class="label-row"><span>ความเรียวของปีกจมูก</span><span id="widthValLabel" class="mono">0%</span></div>
+            <input type="range" id="widthSlider" min="-100" max="100" value="0">
           </div>
           <div class="slider-row">
             <div class="label-row"><span>ปลายจมูก (หยดน้ำ/เชิด)</span><span id="tipValLabel" class="mono">0%</span></div>
@@ -718,7 +718,7 @@
         const scale=rn/r;
         let sdx=dx*scale, sdy=dy*scale;
         
-        if(widthAdj>0){
+        if(widthAdj!==0){
           const rw=Math.pow(Math.abs(dx),pinchStrength)*Math.sign(dx);
           sdx=sdx*0.5+rw*0.5;
         }

@@ -327,6 +327,7 @@
                 <div>
                   <div class="ar-value" id="arRecName" style="font-size:16px; margin-bottom:4px;">-</div>
                   <div class="ar-desc" id="arRecDesc"></div>
+                  <button class="btn btn-outline" id="autoApplyBtn" style="margin-top:12px; padding:6px 12px; font-size:11px; width:fit-content; border-color:var(--bronze-soft);">✨ เลื่อนแถบตามทรงนี้อัตโนมัติ</button>
                 </div>
               </div>
             </div>
@@ -439,11 +440,11 @@
     bold:     "M34,6 C14,24 12,44 24,62 C31,76 33,84 40,90"
   };
   const SHAPE_INFO = {
-    long:   { name:'หน้ายาว (Oblong)', desc:'สัดส่วนความสูงมากกว่าความกว้างค่อนข้างชัด', rec:'โด่งเล็กน้อย', recDesc:'เลี่ยงดั้งที่โด่งหรือยาวมาก เพื่อไม่ให้ใบหน้าดูยาวขึ้นอีก', noseKey:'subtle' },
-    heart:  { name:'หน้ารูปหัวใจ (Heart)', desc:'หน้าผากกว้างกว่าคางอย่างเห็นได้ชัด', rec:'ปลายเรียว', recDesc:'ช่วยถ่วงสมดุลระหว่างหน้าผากที่กว้างกับคางที่แคบ', noseKey:'tapered' },
-    square: { name:'หน้าเหลี่ยม (Square)', desc:'กรามและโหนกแก้มกว้างใกล้เคียงกัน เส้นกรามชัด', rec:'สันตรงคลาสสิก', recDesc:'เส้นตรงเรียบช่วยให้ภาพรวมดูนุ่มนวลกลมกลืนกับมุมกราม', noseKey:'straight' },
-    round:  { name:'หน้ากลม (Round)', desc:'ความกว้างและความสูงใกล้เคียงกัน เส้นกรามมน', rec:'โด่งชัดเจน', recDesc:'เพิ่มมิติและเส้นตั้งให้ใบหน้าดูเรียวยาวขึ้น', noseKey:'bold' },
-    oval:   { name:'หน้ารูปไข่ (Oval)', desc:'สัดส่วนใบหน้าสมดุล ไม่มีจุดใดกว้างหรือแคบเด่นชัด', rec:'โด่งเล็กน้อย', recDesc:'โครงหน้าสมดุลอยู่แล้ว เหมาะกับดั้งได้แทบทุกทรง แนะนำทรงกลางๆ ที่เป็นธรรมชาติ', noseKey:'subtle' }
+    long:   { name:'หน้ายาว (Oblong)', desc:'สัดส่วนความสูงมากกว่าความกว้างค่อนข้างชัด', rec:'โด่งเล็กน้อย', recDesc:'เลี่ยงดั้งที่โด่งหรือยาวมาก เพื่อไม่ให้ใบหน้าดูยาวขึ้นอีก', noseKey:'subtle', preset:[20,-10,10] },
+    heart:  { name:'หน้ารูปหัวใจ (Heart)', desc:'หน้าผากกว้างกว่าคางอย่างเห็นได้ชัด', rec:'ปลายเรียว', recDesc:'ช่วยถ่วงสมดุลระหว่างหน้าผากที่กว้างกับคางที่แคบ', noseKey:'tapered', preset:[15,25,-15] },
+    square: { name:'หน้าเหลี่ยม (Square)', desc:'กรามและโหนกแก้มกว้างใกล้เคียงกัน เส้นกรามชัด', rec:'สันตรงคลาสสิก', recDesc:'เส้นตรงเรียบช่วยให้ภาพรวมดูนุ่มนวลกลมกลืนกับมุมกราม', noseKey:'straight', preset:[40,10,0] },
+    round:  { name:'หน้ากลม (Round)', desc:'ความกว้างและความสูงใกล้เคียงกัน เส้นกรามมน', rec:'โด่งชัดเจน', recDesc:'เพิ่มมิติและเส้นตั้งให้ใบหน้าดูเรียวยาวขึ้น', noseKey:'bold', preset:[60,20,20] },
+    oval:   { name:'หน้ารูปไข่ (Oval)', desc:'สัดส่วนใบหน้าสมดุล ไม่มีจุดใดกว้างหรือแคบเด่นชัด', rec:'โด่งเล็กน้อย', recDesc:'โครงหน้าสมดุลอยู่แล้ว เหมาะกับดั้งได้แทบทุกทรง แนะนำทรงกลางๆ ที่เป็นธรรมชาติ', noseKey:'subtle', preset:[25,0,5] }
   };
 
   function analyzeFaceShape(landmarks){
@@ -530,6 +531,7 @@
     if(camera) { try{ camera.stop(); }catch(e){} }
     currentSourceType = 'image';
     sourceBadgeText.textContent = 'PHOTO';
+    appUploadBtn.textContent = 'เปิดกล้องสด';
     const reader = new FileReader();
     reader.onload = (event) => {
       imgElement.onload = async () => {
@@ -762,7 +764,14 @@
   });
   
   uploadBtnLabel.addEventListener('click', () => photoUpload.click());
-  appUploadBtn.addEventListener('click', () => photoUpload.click());
+  appUploadBtn.addEventListener('click', () => {
+    if(currentSourceType === 'video') {
+       photoUpload.click();
+    } else {
+       appUploadBtn.textContent = 'อัปโหลดรูป';
+       startCamera();
+    }
+  });
   photoUpload.addEventListener('change', (e) => {
     if(e.target.files.length) processUploadedImage(e.target.files[0]);
   });
@@ -836,6 +845,18 @@
     analysisPlaceholder.classList.add('hidden');
     analysisResult.classList.add('show');
     
+    // Auto Apply Button Logic
+    document.getElementById('autoApplyBtn').onclick = () => {
+      bridgeSlider.value = info.preset[0];
+      widthSlider.value = info.preset[1];
+      tipSlider.value = info.preset[2];
+      bridgeValLabel.textContent = info.preset[0] + '%';
+      widthValLabel.textContent = info.preset[1] + '%';
+      tipValLabel.textContent = info.preset[2] + '%';
+      onSliderChange(); // force redraw if on image
+      window.scrollTo({ top: document.getElementById('tool').offsetTop - 20, behavior: 'smooth' });
+    };
+
     // Small delay to trigger CSS transition for the progress bar
     setTimeout(() => { symBar.style.width = score + '%'; }, 50);
   });

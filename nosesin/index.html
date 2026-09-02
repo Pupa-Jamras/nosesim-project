@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
 <style>
   :root{
     --bg:#14181a; --bg-2:#1b2123; --card:#1e2426;
@@ -399,6 +400,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <script>
 /* global FaceMesh, Camera */
@@ -443,6 +445,12 @@
   const analysisCanvas = document.getElementById('analysisCanvas');
   const analysisOverlay = document.getElementById('analysisOverlay');
   const analysisCtx = analysisCanvas.getContext('2d');
+  
+  let currentCropper = null;
+  const cropperModal = document.getElementById('cropperModal');
+  const cropperImage = document.getElementById('cropperImage');
+  const cropperCancelBtn = document.getElementById('cropperCancelBtn');
+  const cropperConfirmBtn = document.getElementById('cropperConfirmBtn');
   
   const analysisStatus = document.getElementById('analysisStatus');
   const analysisPlaceholder = document.getElementById('analysisPlaceholder');
@@ -552,28 +560,67 @@
   
   function processUploadedImage(file) {
     if(!file) return;
-    if(camera) { try{ camera.stop(); }catch(e){} }
-    currentSourceType = 'image';
-    sourceBadgeText.textContent = 'PHOTO';
-    appUploadBtn.textContent = 'เปิดกล้องสด';
     const reader = new FileReader();
     reader.onload = (event) => {
-      imgElement.onload = async () => {
-        if(!faceMesh) initFaceMesh();
-        if(state === 'idle') {
-           scanPlaceholder.classList.add('hidden');
-           setStatus('กำลังวิเคราะห์รูปภาพด้วย AI...');
-           startScanBtn.disabled = true;
-        }
-        
-        // Draw image to canvas to normalize size for FaceMesh
-        drawSourceToCanvas();
-        await faceMesh.send({image: canvas});
+      cropperImage.src = event.target.result;
+      cropperModal.classList.remove('hidden');
+      if (currentCropper) currentCropper.destroy();
+      
+      // Wait for image to load in modal before initializing Cropper
+      cropperImage.onload = () => {
+         currentCropper = new Cropper(cropperImage, {
+            viewMode: 1,
+            dragMode: 'move',
+            aspectRatio: 4 / 3, // Recommend 4:3 for best UI fit, or free? Free is NaN. Let's do NaN for free aspect ratio, but UI is 4:3. Let's do NaN.
+            autoCropArea: 0.9,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+         });
       };
-      imgElement.src = event.target.result;
     };
     reader.readAsDataURL(file);
   }
+
+  cropperCancelBtn.addEventListener('click', () => {
+     cropperModal.classList.add('hidden');
+     if(currentCropper) currentCropper.destroy();
+     currentCropper = null;
+  });
+
+  cropperConfirmBtn.addEventListener('click', () => {
+     if (!currentCropper) return;
+     const croppedCanvas = currentCropper.getCroppedCanvas({
+        maxWidth: 1024,
+        maxHeight: 1024,
+     });
+     if (!croppedCanvas) return;
+     
+     cropperModal.classList.add('hidden');
+     currentCropper.destroy();
+     currentCropper = null;
+     
+     if(camera) { try{ camera.stop(); }catch(e){} }
+     currentSourceType = 'image';
+     sourceBadgeText.textContent = 'PHOTO';
+     appUploadBtn.textContent = 'เปิดกล้องสด';
+     
+     imgElement.onload = async () => {
+       if(!faceMesh) initFaceMesh();
+       if(state === 'idle') {
+          scanPlaceholder.classList.add('hidden');
+          setStatus('กำลังวิเคราะห์รูปภาพด้วย AI...');
+          startScanBtn.disabled = true;
+       }
+       drawSourceToCanvas();
+       await faceMesh.send({image: canvas});
+     };
+     imgElement.src = croppedCanvas.toDataURL('image/jpeg');
+  });
 
   function onCameraError(){
     state = 'error';
@@ -987,6 +1034,16 @@
   });
 })();
 </script>
+<!-- Cropper Modal -->
+<div id="cropperModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
+  <div style="width:100%; max-width:500px; height:60vh; background:#000; border-radius:12px; overflow:hidden; position:relative;">
+    <img id="cropperImage" style="max-width:100%; display:block;" src="">
+  </div>
+  <div style="margin-top:20px; display:flex; gap:16px;">
+    <button id="cropperCancelBtn" class="btn btn-outline" style="min-width:120px;">ยกเลิก</button>
+    <button id="cropperConfirmBtn" class="btn primary" style="min-width:120px;">ยืนยันรูปภาพ</button>
+  </div>
+</div>
 
 </body>
 </html>

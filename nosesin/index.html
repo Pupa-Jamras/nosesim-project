@@ -353,11 +353,11 @@
                     <span style="font-size:12px; color:var(--bronze-soft);">AI ทายโครงหน้าผิด?</span>
                     <select id="manualShapeSelect" style="background:var(--bg-card); color:var(--text); border:1px solid var(--line); border-radius:4px; padding:4px 8px; font-size:12px;">
                         <option value="">เลือกแก้ไขด้วยตัวเอง...</option>
-                        <option value="oval">หน้ารูปไข่ (Oval)</option>
-                        <option value="round">หน้ากลม (Round)</option>
-                        <option value="square">หน้าเหลี่ยม (Square)</option>
-                        <option value="heart">หน้ารูปหัวใจ (Heart)</option>
-                        <option value="long">หน้ายาว (Oblong)</option>
+                        <option value="oval">ใบหน้าสัดส่วนสมดุล</option>
+                        <option value="round">ใบหน้าสัดส่วนกว้าง</option>
+                        <option value="square">ใบหน้ากว้าง กรามชัดเจน</option>
+                        <option value="heart">หน้าผากกว้างกว่าช่วงกราม</option>
+                        <option value="long">ใบหน้าสัดส่วนแนวยาว</option>
                     </select>
                 </div>
             </div>
@@ -497,11 +497,11 @@
     bold:     "M34,6 C14,24 12,44 24,62 C31,76 33,84 40,90"
   };
   const SHAPE_INFO = {
-    long:   { name:'หน้ายาว (Oblong)', desc:'สัดส่วนความสูงมากกว่าความกว้างค่อนข้างชัด', rec:'โด่งเล็กน้อย', recDesc:'เลี่ยงดั้งที่โด่งหรือยาวมาก เพื่อไม่ให้ใบหน้าดูยาวขึ้นอีก', noseKey:'subtle', preset:[20,-10,10] },
-    heart:  { name:'หน้ารูปหัวใจ (Heart)', desc:'หน้าผากกว้างกว่าคางอย่างเห็นได้ชัด', rec:'ปลายเรียว', recDesc:'ช่วยถ่วงสมดุลระหว่างหน้าผากที่กว้างกับคางที่แคบ', noseKey:'tapered', preset:[15,25,-15] },
-    square: { name:'หน้าเหลี่ยม (Square)', desc:'กรามและโหนกแก้มกว้างใกล้เคียงกัน เส้นกรามชัด', rec:'สันตรงคลาสสิก', recDesc:'เส้นตรงเรียบช่วยให้ภาพรวมดูนุ่มนวลกลมกลืนกับมุมกราม', noseKey:'straight', preset:[40,10,0] },
-    round:  { name:'หน้ากลม (Round)', desc:'ความกว้างและความสูงใกล้เคียงกัน เส้นกรามมน', rec:'โด่งชัดเจน', recDesc:'เพิ่มมิติและเส้นตั้งให้ใบหน้าดูเรียวยาวขึ้น', noseKey:'bold', preset:[60,20,20] },
-    oval:   { name:'หน้ารูปไข่ (Oval)', desc:'สัดส่วนใบหน้าสมดุล ไม่มีจุดใดกว้างหรือแคบเด่นชัด', rec:'โด่งเล็กน้อย', recDesc:'โครงหน้าสมดุลอยู่แล้ว เหมาะกับดั้งได้แทบทุกทรง แนะนำทรงกลางๆ ที่เป็นธรรมชาติ', noseKey:'subtle', preset:[25,0,5] }
+    long:   { name:'ใบหน้าสัดส่วนแนวยาว', desc:'ตรวจพบความสูงของใบหน้ามากกว่าความกว้างค่อนข้างชัดเจน', rec:'โด่งเล็กน้อย', recDesc:'เลี่ยงดั้งที่โด่งหรือยาวมาก เพื่อไม่ให้ใบหน้าดูยาวขึ้นอีก', noseKey:'subtle', preset:[20,-10,10] },
+    heart:  { name:'หน้าผากกว้างกว่าช่วงกราม', desc:'ตรวจพบช่วงหน้าผากกว้าง และคางมีความเรียวแคบ', rec:'ปลายเรียว', recDesc:'ช่วยถ่วงสมดุลระหว่างหน้าผากที่กว้างกับคางที่แคบ', noseKey:'tapered', preset:[15,25,-15] },
+    square: { name:'ใบหน้ากว้าง กรามชัดเจน', desc:'ตรวจพบสัดส่วนกรามและโหนกแก้มกว้างใกล้เคียงกัน', rec:'สันตรงคลาสสิก', recDesc:'เส้นตรงเรียบช่วยให้ภาพรวมดูนุ่มนวลกลมกลืนกับมุมกราม', noseKey:'straight', preset:[40,10,0] },
+    round:  { name:'ใบหน้าสัดส่วนกว้าง', desc:'ตรวจพบความกว้างและความสูงของใบหน้าใกล้เคียงกัน', rec:'โด่งชัดเจน', recDesc:'เพิ่มมิติและเส้นตั้งให้ใบหน้าดูเรียวยาวขึ้น', noseKey:'bold', preset:[60,20,20] },
+    oval:   { name:'ใบหน้าสัดส่วนสมดุล', desc:'ตรวจพบสัดส่วนใบหน้าโดยรวมสมดุลกัน', rec:'โด่งเล็กน้อย', recDesc:'โครงหน้าสมดุลอยู่แล้ว เหมาะกับดั้งได้แทบทุกทรง แนะนำทรงกลางๆ ที่เป็นธรรมชาติ', noseKey:'subtle', preset:[25,0,5] }
   };
 
   function analyzeFaceShape(landmarks, imgW, imgH){

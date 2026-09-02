@@ -920,8 +920,9 @@
       analysisStatus.textContent = 'ไม่พบใบหน้า กรุณาจัดหน้าให้อยู่ในกล้อง';
       return;
     }
+    const isShowingResult = analysisCanvas.style.opacity === '1';
     
-    if (analysisPreviewBox.classList.contains('hidden') && currentSourceType === 'video') {
+    if ((analysisPreviewBox.classList.contains('hidden') || isShowingResult) && currentSourceType === 'video') {
        analysisPreviewBox.classList.remove('hidden');
        analysisVideo.srcObject = video.srcObject;
        analysisVideo.play().catch(e => console.error(e));

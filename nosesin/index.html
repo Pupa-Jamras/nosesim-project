@@ -310,7 +310,9 @@
           <div class="analysis-status" id="analysisStatus" style="color:var(--bronze); font-weight:bold; margin-bottom:10px;"></div>
           
           <div id="analysisPreviewBox" class="hidden" style="width:100%; aspect-ratio:4/3; background:#000; border-radius:10px; overflow:hidden; border:1px solid var(--line); margin-bottom:14px; position:relative;">
-             <canvas id="analysisCanvas" style="width:100%; height:100%; object-fit:cover;"></canvas>
+             <video id="analysisVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1); position:absolute; top:0; left:0;"></video>
+             <canvas id="analysisCanvas" width="480" height="360" style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; opacity:0;"></canvas>
+             <div id="analysisOverlay" class="hidden" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:20; display:flex; align-items:center; justify-content:center; color:white; font-size:64px; font-weight:bold; pointer-events:none; transition: opacity 0.2s;"></div>
           </div>
           
           <div style="display:flex; flex-direction:column; gap:10px;">
@@ -437,7 +439,9 @@
   const analyzeSnapBtn = document.getElementById('analyzeSnapBtn');
   const analyzeUploadBtn = document.getElementById('analyzeUploadBtn');
   const analysisPreviewBox = document.getElementById('analysisPreviewBox');
+  const analysisVideo = document.getElementById('analysisVideo');
   const analysisCanvas = document.getElementById('analysisCanvas');
+  const analysisOverlay = document.getElementById('analysisOverlay');
   const analysisCtx = analysisCanvas.getContext('2d');
   
   const analysisStatus = document.getElementById('analysisStatus');
@@ -856,11 +860,21 @@
     }
     
     // Draw snapshot to preview box
-    analysisPreviewBox.classList.remove('hidden');
+    analysisVideo.style.opacity = '0';
+    analysisCanvas.style.opacity = '1';
+    
     if (currentSourceType === 'video') {
+       const vw = video.videoWidth || CANVAS_W;
+       const vh = video.videoHeight || CANVAS_H;
+       const scale = Math.max(CANVAS_W / vw, CANVAS_H / vh);
+       const sw = CANVAS_W / scale;
+       const sh = CANVAS_H / scale;
+       const sx = (vw - sw) / 2;
+       const sy = (vh - sh) / 2;
+       
        analysisCtx.save();
        analysisCtx.scale(-1, 1);
-       analysisCtx.drawImage(video, -CANVAS_W, 0, CANVAS_W, CANVAS_H);
+       analysisCtx.drawImage(video, sx, sy, sw, sh, -CANVAS_W, 0, CANVAS_W, CANVAS_H);
        analysisCtx.restore();
     } else {
        analysisCtx.drawImage(canvas, 0, 0, CANVAS_W, CANVAS_H);
@@ -906,40 +920,48 @@
       analysisStatus.textContent = 'ไม่พบใบหน้า กรุณาจัดหน้าให้อยู่ในกล้อง';
       return;
     }
-    analysisStatus.textContent = 'เตรียมตัวถ่ายภาพ...';
     
-    // Scroll up to camera view
-    window.scrollTo({ top: document.getElementById('tool').offsetTop - 20, behavior: 'smooth' });
+    if (analysisPreviewBox.classList.contains('hidden') && currentSourceType === 'video') {
+       analysisPreviewBox.classList.remove('hidden');
+       analysisVideo.srcObject = video.srcObject;
+       analysisVideo.style.opacity = '1';
+       analysisCanvas.style.opacity = '0';
+       analysisStatus.textContent = 'จัดใบหน้าให้ตรง แล้วกดปุ่มถ่ายภาพอีกครั้ง';
+       analyzeSnapBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> 📸 กดเพื่อถ่ายภาพ';
+       return;
+    }
+
+    analysisStatus.textContent = 'กำลังเตรียมตัวถ่ายภาพ...';
+    analysisPreviewBox.classList.remove('hidden');
     
-    // Start countdown
-    let count = 3;
-    captureOverlay.textContent = count;
-    captureOverlay.classList.remove('hidden');
-    captureOverlay.style.opacity = '1';
-    
-    const interval = setInterval(() => {
-      count--;
-      if (count > 0) {
-         captureOverlay.textContent = count;
-      } else if (count === 0) {
-         // Flash effect
-         captureOverlay.style.background = 'rgba(255,255,255,0.8)';
-         captureOverlay.textContent = '';
-      } else {
-         clearInterval(interval);
-         captureOverlay.style.opacity = '0';
-         setTimeout(() => { 
-           captureOverlay.classList.add('hidden'); 
-           captureOverlay.style.background = 'rgba(0,0,0,0.4)';
-         }, 200);
-         
-         runAnalysis();
-         // Scroll back down
-         setTimeout(() => {
-           window.scrollTo({ top: document.getElementById('analysisStatus').offsetTop - 50, behavior: 'smooth' });
-         }, 300);
-      }
-    }, 800);
+    if (currentSourceType === 'video') {
+      let count = 3;
+      analysisOverlay.textContent = count;
+      analysisOverlay.classList.remove('hidden');
+      analysisOverlay.style.opacity = '1';
+      
+      const interval = setInterval(() => {
+        count--;
+        if (count > 0) {
+           analysisOverlay.textContent = count;
+        } else if (count === 0) {
+           analysisOverlay.style.background = 'rgba(255,255,255,0.8)';
+           analysisOverlay.textContent = '';
+        } else {
+           clearInterval(interval);
+           analysisOverlay.style.opacity = '0';
+           setTimeout(() => { 
+             analysisOverlay.classList.add('hidden'); 
+             analysisOverlay.style.background = 'rgba(0,0,0,0.4)';
+           }, 200);
+           
+           runAnalysis();
+           analyzeSnapBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> ถ่ายภาพใหม่';
+        }
+      }, 800);
+    } else {
+      runAnalysis();
+    }
   });
 
   analyzeUploadBtn.addEventListener('click', () => {

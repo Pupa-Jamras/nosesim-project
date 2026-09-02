@@ -939,7 +939,8 @@
   }
   
   function drawWireframe() {
-    if(!isAiMode || !latestLandmarks) return;
+    // Show wireframe if in AI mode OR during the initial scanning phase
+    if((!isAiMode && state !== 'scanning') || !latestLandmarks) return;
     ctx.fillStyle = '#00FF00';
     latestLandmarks.forEach(lm => {
        ctx.fillRect(getLmX(lm), lm.y*CANVAS_H, 2, 2);

@@ -304,10 +304,22 @@
       </div>
       <div class="analysis-card">
         <div class="analysis-left">
-          <h3>วิเคราะห์ตอนนี้</h3>
-          <p>หันหน้าเข้ากล้องให้เห็นชัด แล้วกดปุ่มด้านล่าง ระบบจะจับภาพสัดส่วนใบหน้าปัจจุบันมาประเมิน</p>
-          <div class="analysis-status" id="analysisStatus"></div>
-          <button class="btn primary" id="analyzeBtn">วิเคราะห์โครงหน้า</button>
+          <h3>วิเคราะห์ภาพนิ่ง</h3>
+          <p>ถ่ายรูปจากกล้อง หรืออัปโหลดรูปภาพเพื่อความแม่นยำในการวิเคราะห์สัดส่วน</p>
+          <div class="analysis-status" id="analysisStatus" style="color:var(--bronze); font-weight:bold; margin-bottom:10px;"></div>
+          
+          <div id="analysisPreviewBox" class="hidden" style="width:100%; aspect-ratio:4/3; background:#000; border-radius:10px; overflow:hidden; border:1px solid var(--line); margin-bottom:14px; position:relative;">
+             <canvas id="analysisCanvas" style="width:100%; height:100%; object-fit:cover;"></canvas>
+          </div>
+          
+          <div style="display:flex; flex-direction:column; gap:10px;">
+             <button class="btn primary" id="analyzeSnapBtn" style="display:flex; justify-content:center; gap:8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> ถ่ายภาพ & วิเคราะห์
+             </button>
+             <button class="btn btn-outline" id="analyzeUploadBtn" style="display:flex; justify-content:center; gap:8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> อัปโหลดรูปภาพใหม่
+             </button>
+          </div>
         </div>
         <div id="analysisRight">
           <div class="analysis-placeholder" id="analysisPlaceholder">
@@ -420,7 +432,12 @@
   const aiModeBtn = document.getElementById('aiModeBtn');
   const aiHud = document.getElementById('aiHud');
   
-  const analyzeBtn = document.getElementById('analyzeBtn');
+  const analyzeSnapBtn = document.getElementById('analyzeSnapBtn');
+  const analyzeUploadBtn = document.getElementById('analyzeUploadBtn');
+  const analysisPreviewBox = document.getElementById('analysisPreviewBox');
+  const analysisCanvas = document.getElementById('analysisCanvas');
+  const analysisCtx = analysisCanvas.getContext('2d');
+  
   const analysisStatus = document.getElementById('analysisStatus');
   const analysisPlaceholder = document.getElementById('analysisPlaceholder');
   const analysisResult = document.getElementById('analysisResult');
@@ -585,6 +602,13 @@
       }
     } else if(state === 'filter'){
       drawToCanvas(!isComparing);
+      
+      // If we uploaded a photo specifically for analysis, trigger it now that it's processed
+      if(autoAnalyzeNextFrame && has) {
+         autoAnalyzeNextFrame = false;
+         runAnalysis();
+         window.scrollTo({ top: document.getElementById('analysisStatus').offsetTop - 50, behavior: 'smooth' });
+      }
     }
   }
   
@@ -818,7 +842,7 @@
     if(currentSourceType === 'image') drawToCanvas(!isComparing);
   });
 
-  analyzeBtn.addEventListener('click', () => {
+  function runAnalysis() {
     if(!latestLandmarks){
       analysisStatus.textContent = 'ไม่พบใบหน้า กรุณาลองใหม่อีกครั้ง';
       return;
@@ -828,7 +852,19 @@
       analysisStatus.textContent = 'วิเคราะห์ไม่สำเร็จ ลองขยับให้เห็นใบหน้าชัดขึ้น';
       return;
     }
-    analysisStatus.textContent = '';
+    
+    // Draw snapshot to preview box
+    analysisPreviewBox.classList.remove('hidden');
+    if (currentSourceType === 'video') {
+       analysisCtx.save();
+       analysisCtx.scale(-1, 1);
+       analysisCtx.drawImage(video, -CANVAS_W, 0, CANVAS_W, CANVAS_H);
+       analysisCtx.restore();
+    } else {
+       analysisCtx.drawImage(canvas, 0, 0, CANVAS_W, CANVAS_H);
+    }
+
+    analysisStatus.textContent = 'วิเคราะห์สำเร็จ!';
     arShapeName.textContent = info.name;
     arShapeDesc.textContent = info.desc;
     arRecName.textContent = info.rec;
@@ -859,6 +895,24 @@
 
     // Small delay to trigger CSS transition for the progress bar
     setTimeout(() => { symBar.style.width = score + '%'; }, 50);
+  }
+
+  let autoAnalyzeNextFrame = false;
+
+  analyzeSnapBtn.addEventListener('click', () => {
+    if(!latestLandmarks) {
+      analysisStatus.textContent = 'ไม่พบใบหน้า กรุณาจัดหน้าให้อยู่ในกล้อง';
+      return;
+    }
+    analysisStatus.textContent = 'กำลังถ่ายภาพ...';
+    setTimeout(() => {
+       runAnalysis();
+    }, 500); // fake tiny delay for UX
+  });
+
+  analyzeUploadBtn.addEventListener('click', () => {
+     photoUpload.click(); // trigger main upload logic
+     autoAnalyzeNextFrame = true; // wait for next successful result
   });
 })();
 </script>

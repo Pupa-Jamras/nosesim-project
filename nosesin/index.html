@@ -484,10 +484,11 @@
     const foreheadJawRatio = foreheadWidth / (jawWidth || 0.0001);
 
     let key;
-    if(widthHeightRatio < 0.72) key = 'long';
-    else if(foreheadJawRatio > 1.15) key = 'heart';
-    else if(jawCheekRatio > 0.95 && widthHeightRatio > 0.85) key = 'square';
-    else if(jawCheekRatio > 0.9 && widthHeightRatio > 0.9) key = 'round';
+    // Normal width/height is ~0.7 to 0.75. Let's make < 0.68 long.
+    if(widthHeightRatio < 0.68) key = 'long';
+    else if(foreheadJawRatio > 1.25) key = 'heart';
+    else if(jawCheekRatio > 0.90 && widthHeightRatio > 0.78) key = 'square';
+    else if(jawCheekRatio > 0.85 && widthHeightRatio > 0.82) key = 'round';
     else key = 'oval';
     
     // Calculate Symmetry Score
@@ -804,6 +805,7 @@
   });
   photoUpload.addEventListener('change', (e) => {
     if(e.target.files.length) processUploadedImage(e.target.files[0]);
+    e.target.value = ''; // Reset input to allow selecting same file again or new files cleanly
   });
 
   skipBtn.addEventListener('click', () => {
@@ -916,6 +918,19 @@
   let autoAnalyzeNextFrame = false;
 
   analyzeSnapBtn.addEventListener('click', () => {
+    // If we are looking at an uploaded photo, switch back to camera first
+    if (currentSourceType === 'image') {
+       appUploadBtn.click(); // Switches main app back to camera mode
+       analysisPreviewBox.classList.remove('hidden');
+       analysisVideo.srcObject = video.srcObject;
+       analysisVideo.play().catch(e => console.error(e));
+       analysisVideo.style.opacity = '1';
+       analysisCanvas.style.opacity = '0';
+       analysisStatus.textContent = 'กำลังเปิดกล้อง... จัดใบหน้าให้ตรงแล้วกดปุ่มถ่ายภาพอีกครั้ง';
+       analyzeSnapBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> 📸 กดเพื่อถ่ายภาพ';
+       return;
+    }
+
     if(!latestLandmarks) {
       analysisStatus.textContent = 'ไม่พบใบหน้า กรุณาจัดหน้าให้อยู่ในกล้อง';
       return;

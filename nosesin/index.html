@@ -398,6 +398,17 @@
   </footer>
 </div>
 
+<!-- Cropper Modal -->
+<div id="cropperModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
+  <div style="width:100%; max-width:500px; height:60vh; background:#000; border-radius:12px; overflow:hidden; position:relative;">
+    <img id="cropperImage" style="max-width:100%; display:block;" src="">
+  </div>
+  <div style="margin-top:20px; display:flex; gap:16px;">
+    <button id="cropperCancelBtn" class="btn btn-outline" style="min-width:120px;">ยกเลิก</button>
+    <button id="cropperConfirmBtn" class="btn primary" style="min-width:120px;">ยืนยันรูปภาพ</button>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -1034,16 +1045,6 @@
   });
 })();
 </script>
-<!-- Cropper Modal -->
-<div id="cropperModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
-  <div style="width:100%; max-width:500px; height:60vh; background:#000; border-radius:12px; overflow:hidden; position:relative;">
-    <img id="cropperImage" style="max-width:100%; display:block;" src="">
-  </div>
-  <div style="margin-top:20px; display:flex; gap:16px;">
-    <button id="cropperCancelBtn" class="btn btn-outline" style="min-width:120px;">ยกเลิก</button>
-    <button id="cropperConfirmBtn" class="btn primary" style="min-width:120px;">ยืนยันรูปภาพ</button>
-  </div>
-</div>
 
 </body>
 </html>

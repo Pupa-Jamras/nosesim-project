@@ -569,13 +569,15 @@
     }catch(err){ onCameraError(err); }
   }
   
-  function processUploadedImage(file) {
+  function processUploadedImage(file, target) {
     if(!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       cropperImage.src = event.target.result;
       cropperModal.classList.remove('hidden');
       if (currentCropper) currentCropper.destroy();
+      
+      cropperConfirmBtn.dataset.target = target;
       
       // Wait for image to load in modal before initializing Cropper
       cropperImage.onload = () => {
@@ -602,6 +604,8 @@
      if(currentCropper) currentCropper.destroy();
      currentCropper = null;
   });
+  
+  let isAnalysisUploadProcessing = false;
 
   cropperConfirmBtn.addEventListener('click', () => {
      if (!currentCropper) return;
@@ -615,22 +619,49 @@
      currentCropper.destroy();
      currentCropper = null;
      
-     if(camera) { try{ camera.stop(); }catch(e){} }
-     currentSourceType = 'image';
-     sourceBadgeText.textContent = 'PHOTO';
-     appUploadBtn.textContent = 'เปิดกล้องสด';
+     const target = cropperConfirmBtn.dataset.target || 'main';
      
-     imgElement.onload = async () => {
-       if(!faceMesh) initFaceMesh();
-       if(state === 'idle') {
-          scanPlaceholder.classList.add('hidden');
-          setStatus('กำลังวิเคราะห์รูปภาพด้วย AI...');
-          startScanBtn.disabled = true;
-       }
-       drawSourceToCanvas();
-       await faceMesh.send({image: canvas});
-     };
-     imgElement.src = croppedCanvas.toDataURL('image/jpeg');
+     if (target === 'main') {
+         if(camera) { try{ camera.stop(); }catch(e){} }
+         currentSourceType = 'image';
+         sourceBadgeText.textContent = 'PHOTO';
+         appUploadBtn.textContent = 'เปิดกล้องสด';
+         
+         imgElement.onload = async () => {
+           if(!faceMesh) initFaceMesh();
+           if(state === 'idle') {
+              scanPlaceholder.classList.add('hidden');
+              setStatus('กำลังวิเคราะห์รูปภาพด้วย AI...');
+              startScanBtn.disabled = true;
+           }
+           drawSourceToCanvas();
+           await faceMesh.send({image: canvas});
+         };
+         imgElement.src = croppedCanvas.toDataURL('image/jpeg');
+     } else if (target === 'analysis') {
+         isAnalysisUploadProcessing = true;
+         
+         const tempImg = new Image();
+         tempImg.onload = async () => {
+             // Draw tempImg to analysisCanvas to show it
+             analysisCtx.fillStyle = '#0c0f10';
+             analysisCtx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+             const aspect = tempImg.width / tempImg.height;
+             let dw = CANVAS_W, dh = CANVAS_W / aspect;
+             if(dh < CANVAS_H) { dh = CANVAS_H; dw = CANVAS_H * aspect; }
+             analysisCtx.drawImage(tempImg, (CANVAS_W-dw)/2, (CANVAS_H-dh)/2, dw, dh);
+             
+             analysisCanvas.style.opacity = '1';
+             if(analysisVideo) analysisVideo.style.opacity = '0';
+             analysisPreviewBox.classList.remove('hidden');
+             analysisStatus.textContent = 'กำลังวิเคราะห์ภาพ...';
+             analyzeSnapBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> ถ่ายภาพใหม่';
+
+             if(!faceMesh) initFaceMesh();
+             await faceMesh.send({image: analysisCanvas});
+         };
+         tempImg.src = croppedCanvas.toDataURL('image/jpeg');
+     }
   });
 
   function onCameraError(){
@@ -643,6 +674,35 @@
 
   function onResults(results){
     const has = results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0;
+    
+    if (isAnalysisUploadProcessing) {
+       isAnalysisUploadProcessing = false;
+       const lm = has ? results.multiFaceLandmarks[0] : null;
+       if(lm) {
+          const shapeInfo = analyzeFaceShape(lm);
+          if(!shapeInfo) { analysisStatus.textContent = 'ตรวจจับโครงหน้าไม่สำเร็จ'; return; }
+          analysisResult.classList.remove('hidden');
+          analysisPlaceholder.classList.add('hidden');
+          
+          document.getElementById('resShape').textContent = shapeInfo.name;
+          document.getElementById('resShapeDesc').textContent = shapeInfo.desc;
+          document.getElementById('resRec').textContent = shapeInfo.rec;
+          document.getElementById('resRecDesc').textContent = shapeInfo.recDesc;
+          
+          autoApplyBtn.dataset.preset = JSON.stringify(shapeInfo.preset);
+          
+          const score = shapeInfo.symmetryScore || 0;
+          symScore.textContent = Math.round(score) + '%';
+          setTimeout(() => { symBar.style.width = score + '%'; }, 50);
+          
+          analysisStatus.textContent = 'วิเคราะห์สำเร็จ!';
+          window.scrollTo({ top: document.getElementById('analysisStatus').offsetTop - 50, behavior: 'smooth' });
+       } else {
+          analysisStatus.textContent = 'ไม่พบใบหน้าในรูปภาพที่อัปโหลด';
+       }
+       return; // SKIP normal drawing since this is just for analysis box
+    }
+
     latestLandmarks = has ? results.multiFaceLandmarks[0] : null;
     
     if(latestLandmarks && state === 'filter') updateHUD(latestLandmarks);
@@ -667,13 +727,6 @@
       }
     } else if(state === 'filter'){
       drawToCanvas(!isComparing);
-      
-      // If we uploaded a photo specifically for analysis, trigger it now that it's processed
-      if(autoAnalyzeNextFrame && has) {
-         autoAnalyzeNextFrame = false;
-         runAnalysis();
-         window.scrollTo({ top: document.getElementById('analysisStatus').offsetTop - 50, behavior: 'smooth' });
-      }
     }
   }
   
@@ -851,10 +904,12 @@
     scanFrame.insertBefore(canvas, ringFg.closest('svg'));
     startCamera();
   });
+  let uploadTarget = 'main';
   
-  uploadBtnLabel.addEventListener('click', () => photoUpload.click());
+  uploadBtnLabel.addEventListener('click', () => { uploadTarget = 'main'; photoUpload.click(); });
   appUploadBtn.addEventListener('click', () => {
     if(currentSourceType === 'video') {
+       uploadTarget = 'main';
        photoUpload.click();
     } else {
        appUploadBtn.textContent = 'อัปโหลดรูป';
@@ -862,7 +917,7 @@
     }
   });
   photoUpload.addEventListener('change', (e) => {
-    if(e.target.files.length) processUploadedImage(e.target.files[0]);
+    if(e.target.files.length) processUploadedImage(e.target.files[0], uploadTarget);
     e.target.value = ''; // Reset input to allow selecting same file again or new files cleanly
   });
 
@@ -973,8 +1028,6 @@
     setTimeout(() => { symBar.style.width = score + '%'; }, 50);
   }
 
-  let autoAnalyzeNextFrame = false;
-
   analyzeSnapBtn.addEventListener('click', () => {
     // If we are looking at an uploaded photo, switch back to camera first
     if (currentSourceType === 'image') {
@@ -1040,8 +1093,8 @@
   });
 
   analyzeUploadBtn.addEventListener('click', () => {
-     photoUpload.click(); // trigger main upload logic
-     autoAnalyzeNextFrame = true; // wait for next successful result
+     uploadTarget = 'analysis';
+     photoUpload.click();
   });
 })();
 </script>

@@ -488,8 +488,8 @@
   const symBar = document.getElementById('symBar');
   const symScore = document.getElementById('symScore');
 
-  // Use accurate landmarks: lower jaw angle (150, 379) instead of upper jaw
-  const FACE_IDX = { top:10, chin:152, cheekL:234, cheekR:454, jawL:150, jawR:379, foreheadL:68, foreheadR:298 };
+  // Use accurate silhouette landmarks
+  const FACE_IDX = { top:10, chin:152, cheekL:234, cheekR:454, jawL:132, jawR:361, foreheadL:68, foreheadR:298 };
   const NOSE_PATHS = {
     straight: "M30,6 C18,30 16,50 22,66 C26,78 32,86 40,90",
     subtle:   "M32,6 C16,26 14,46 24,64 C30,78 34,84 42,88",
@@ -519,12 +519,12 @@
     const foreheadJawRatio = foreheadWidth / (jawWidth || 0.0001);
 
     let key;
-    // New tuned thresholds based on lower jaw (150/379)
-    if(foreheadJawRatio > 1.25) {
+    // Data-driven thresholds based on silhouette markers (132/361 for jaw, 68/298 for forehead)
+    if(foreheadJawRatio > 1.05) {
        key = 'heart'; 
-    } else if(jawCheekRatio > 0.82) {
+    } else if(widthHeightRatio > 0.77 && jawCheekRatio > 0.93) {
        key = 'square'; 
-    } else if(widthHeightRatio > 0.82) {
+    } else if(widthHeightRatio > 0.80 && jawCheekRatio <= 0.93) {
        key = 'round'; 
     } else if(widthHeightRatio < 0.74) {
        key = 'long'; 

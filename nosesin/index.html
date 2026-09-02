@@ -706,13 +706,14 @@
        if(lm) {
           const shapeInfo = analyzeFaceShape(lm);
           if(!shapeInfo) { analysisStatus.textContent = 'ตรวจจับโครงหน้าไม่สำเร็จ'; return; }
-          analysisResult.classList.remove('hidden');
+          analysisResult.classList.add('show');
           analysisPlaceholder.classList.add('hidden');
           
-          document.getElementById('resShape').textContent = shapeInfo.name;
-          document.getElementById('resShapeDesc').textContent = shapeInfo.desc;
-          document.getElementById('resRec').textContent = shapeInfo.rec;
-          document.getElementById('resRecDesc').textContent = shapeInfo.recDesc;
+          document.getElementById('arShapeName').textContent = shapeInfo.name;
+          document.getElementById('arShapeDesc').textContent = shapeInfo.desc;
+          document.getElementById('arRecName').textContent = shapeInfo.rec;
+          document.getElementById('arRecDesc').textContent = shapeInfo.recDesc;
+          document.getElementById('arNoseIcon').querySelector('path').setAttribute('d', NOSE_PATHS[shapeInfo.noseKey]);
           
           document.getElementById('autoApplyBtn').dataset.preset = JSON.stringify(shapeInfo.preset);
           

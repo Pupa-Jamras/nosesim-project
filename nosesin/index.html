@@ -348,6 +348,20 @@
               </div>
             </div>
             
+            <div class="ar-block" style="grid-column: span 2; padding: 12px 22px; background: rgba(255,255,255,0.02);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:12px; color:var(--bronze-soft);">AI ทายโครงหน้าผิด?</span>
+                    <select id="manualShapeSelect" style="background:var(--bg-card); color:var(--text); border:1px solid var(--line); border-radius:4px; padding:4px 8px; font-size:12px;">
+                        <option value="">เลือกแก้ไขด้วยตัวเอง...</option>
+                        <option value="oval">หน้ารูปไข่ (Oval)</option>
+                        <option value="round">หน้ากลม (Round)</option>
+                        <option value="square">หน้าเหลี่ยม (Square)</option>
+                        <option value="heart">หน้ารูปหัวใจ (Heart)</option>
+                        <option value="long">หน้ายาว (Oblong)</option>
+                    </select>
+                </div>
+            </div>
+            
             <div class="ar-block" style="grid-column: span 2; padding: 18px 22px;">
               <div class="ar-label mono">ความสมมาตรของใบหน้า (Symmetry Score)</div>
               <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
@@ -474,8 +488,8 @@
   const symBar = document.getElementById('symBar');
   const symScore = document.getElementById('symScore');
 
-  // Use accurate landmarks: jaw angle (132, 361) and temporal/forehead (68, 298)
-  const FACE_IDX = { top:10, chin:152, cheekL:234, cheekR:454, jawL:132, jawR:361, foreheadL:68, foreheadR:298 };
+  // Use accurate landmarks: lower jaw angle (150, 379) instead of upper jaw
+  const FACE_IDX = { top:10, chin:152, cheekL:234, cheekR:454, jawL:150, jawR:379, foreheadL:68, foreheadR:298 };
   const NOSE_PATHS = {
     straight: "M30,6 C18,30 16,50 22,66 C26,78 32,86 40,90",
     subtle:   "M32,6 C16,26 14,46 24,64 C30,78 34,84 42,88",
@@ -505,17 +519,17 @@
     const foreheadJawRatio = foreheadWidth / (jawWidth || 0.0001);
 
     let key;
-    // Redefined thresholds for better accuracy
-    if(foreheadJawRatio > 1.22) {
-       key = 'heart'; // Forehead is significantly wider than jaw
-    } else if(jawCheekRatio > 0.83) {
-       key = 'square'; // Strong jawline (Square/Rectangular)
+    // New tuned thresholds based on lower jaw (150/379)
+    if(foreheadJawRatio > 1.25) {
+       key = 'heart'; 
+    } else if(jawCheekRatio > 0.82) {
+       key = 'square'; 
     } else if(widthHeightRatio > 0.82) {
-       key = 'round'; // Face is relatively wide/short
+       key = 'round'; 
     } else if(widthHeightRatio < 0.74) {
-       key = 'long'; // Face is relatively narrow/tall
+       key = 'long'; 
     } else {
-       key = 'oval'; // Balanced proportions
+       key = 'oval'; 
     }
     
     // Calculate Symmetry Score (using pixel distances)
@@ -1135,6 +1149,22 @@
      uploadTarget = 'analysis';
      photoUpload.click();
   });
+
+  // Manual Shape Override
+  document.getElementById('manualShapeSelect').addEventListener('change', (e) => {
+      const val = e.target.value;
+      if(!val) return;
+      const info = SHAPE_INFO[val];
+      if(!info) return;
+      
+      document.getElementById('arShapeName').innerHTML = `${info.name} <span style="font-size:10px; color:#666;">(Manual Override)</span>`;
+      document.getElementById('arShapeDesc').textContent = info.desc;
+      document.getElementById('arRecName').textContent = info.rec;
+      document.getElementById('arRecDesc').textContent = info.recDesc;
+      document.getElementById('arNoseIcon').querySelector('path').setAttribute('d', NOSE_PATHS[info.noseKey]);
+      document.getElementById('autoApplyBtn').dataset.preset = JSON.stringify(info.preset);
+  });
+  
 })();
 </script>
 

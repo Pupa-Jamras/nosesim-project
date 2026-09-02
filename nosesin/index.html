@@ -504,12 +504,18 @@
     const foreheadJawRatio = foreheadWidth / (jawWidth || 0.0001);
 
     let key;
-    // For a normal aspect-ratio-corrected face, widthHeightRatio is usually around 0.70 to 0.85
-    if(widthHeightRatio < 0.75) key = 'long';
-    else if(foreheadJawRatio > 1.25) key = 'heart';
-    else if(jawCheekRatio > 0.88 && widthHeightRatio > 0.78) key = 'square';
-    else if(jawCheekRatio > 0.82 && widthHeightRatio > 0.84) key = 'round';
-    else key = 'oval';
+    // Redefined thresholds for better accuracy
+    if(foreheadJawRatio > 1.22) {
+       key = 'heart'; // Forehead is significantly wider than jaw
+    } else if(jawCheekRatio > 0.83) {
+       key = 'square'; // Strong jawline (Square/Rectangular)
+    } else if(widthHeightRatio > 0.82) {
+       key = 'round'; // Face is relatively wide/short
+    } else if(widthHeightRatio < 0.74) {
+       key = 'long'; // Face is relatively narrow/tall
+    } else {
+       key = 'oval'; // Balanced proportions
+    }
     
     // Calculate Symmetry Score (using pixel distances)
     const nose = p(1);

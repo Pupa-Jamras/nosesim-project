@@ -249,6 +249,7 @@
               <div>PITCH: <span id="hudPitch">0.0</span>°</div>
               <div>SMILE: <span id="hudSmile">0</span>%</div>
             </div>
+            <div id="captureOverlay" class="hidden" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:20; display:flex; align-items:center; justify-content:center; color:white; font-size:72px; font-weight:bold; text-shadow:0 2px 10px rgba(0,0,0,0.5); pointer-events:none; transition: opacity 0.2s;"></div>
             <div class="cam-fallback hidden" id="camFallback">
               <span>ไม่พบสัญญาณกล้องในหน้านี้ — ลองกลับไปเริ่มสแกนใบหน้าอีกครั้ง</span>
             </div>
@@ -431,6 +432,7 @@
   const captureBtn = document.getElementById('captureBtn');
   const aiModeBtn = document.getElementById('aiModeBtn');
   const aiHud = document.getElementById('aiHud');
+  const captureOverlay = document.getElementById('captureOverlay');
   
   const analyzeSnapBtn = document.getElementById('analyzeSnapBtn');
   const analyzeUploadBtn = document.getElementById('analyzeUploadBtn');
@@ -904,10 +906,40 @@
       analysisStatus.textContent = 'ไม่พบใบหน้า กรุณาจัดหน้าให้อยู่ในกล้อง';
       return;
     }
-    analysisStatus.textContent = 'กำลังถ่ายภาพ...';
-    setTimeout(() => {
-       runAnalysis();
-    }, 500); // fake tiny delay for UX
+    analysisStatus.textContent = 'เตรียมตัวถ่ายภาพ...';
+    
+    // Scroll up to camera view
+    window.scrollTo({ top: document.getElementById('tool').offsetTop - 20, behavior: 'smooth' });
+    
+    // Start countdown
+    let count = 3;
+    captureOverlay.textContent = count;
+    captureOverlay.classList.remove('hidden');
+    captureOverlay.style.opacity = '1';
+    
+    const interval = setInterval(() => {
+      count--;
+      if (count > 0) {
+         captureOverlay.textContent = count;
+      } else if (count === 0) {
+         // Flash effect
+         captureOverlay.style.background = 'rgba(255,255,255,0.8)';
+         captureOverlay.textContent = '';
+      } else {
+         clearInterval(interval);
+         captureOverlay.style.opacity = '0';
+         setTimeout(() => { 
+           captureOverlay.classList.add('hidden'); 
+           captureOverlay.style.background = 'rgba(0,0,0,0.4)';
+         }, 200);
+         
+         runAnalysis();
+         // Scroll back down
+         setTimeout(() => {
+           window.scrollTo({ top: document.getElementById('analysisStatus').offsetTop - 50, behavior: 'smooth' });
+         }, 300);
+      }
+    }, 800);
   });
 
   analyzeUploadBtn.addEventListener('click', () => {

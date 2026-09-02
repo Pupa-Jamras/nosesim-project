@@ -489,9 +489,10 @@
     oval:   { name:'หน้ารูปไข่ (Oval)', desc:'สัดส่วนใบหน้าสมดุล ไม่มีจุดใดกว้างหรือแคบเด่นชัด', rec:'โด่งเล็กน้อย', recDesc:'โครงหน้าสมดุลอยู่แล้ว เหมาะกับดั้งได้แทบทุกทรง แนะนำทรงกลางๆ ที่เป็นธรรมชาติ', noseKey:'subtle', preset:[25,0,5] }
   };
 
-  function analyzeFaceShape(landmarks){
+  function analyzeFaceShape(landmarks, imgW, imgH){
     const p = i => landmarks[i];
-    const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+    // Convert normalized coordinates back to actual pixel scale so distances are not skewed by aspect ratio
+    const dist = (a,b) => Math.hypot((a.x-b.x)*imgW, (a.y-b.y)*imgH);
     const faceHeight = dist(p(FACE_IDX.top), p(FACE_IDX.chin));
     const cheekWidth = dist(p(FACE_IDX.cheekL), p(FACE_IDX.cheekR));
     const jawWidth = dist(p(FACE_IDX.jawL), p(FACE_IDX.jawR));
@@ -503,17 +504,17 @@
     const foreheadJawRatio = foreheadWidth / (jawWidth || 0.0001);
 
     let key;
-    // Normal width/height is ~0.7 to 0.75. Let's make < 0.68 long.
-    if(widthHeightRatio < 0.68) key = 'long';
+    // For a normal aspect-ratio-corrected face, widthHeightRatio is usually around 0.70 to 0.85
+    if(widthHeightRatio < 0.75) key = 'long';
     else if(foreheadJawRatio > 1.25) key = 'heart';
-    else if(jawCheekRatio > 0.90 && widthHeightRatio > 0.78) key = 'square';
-    else if(jawCheekRatio > 0.85 && widthHeightRatio > 0.82) key = 'round';
+    else if(jawCheekRatio > 0.88 && widthHeightRatio > 0.78) key = 'square';
+    else if(jawCheekRatio > 0.82 && widthHeightRatio > 0.84) key = 'round';
     else key = 'oval';
     
-    // Calculate Symmetry Score
+    // Calculate Symmetry Score (using pixel distances)
     const nose = p(1);
-    const leftW = Math.abs(nose.x - p(FACE_IDX.cheekL).x);
-    const rightW = Math.abs(p(FACE_IDX.cheekR).x - nose.x);
+    const leftW = Math.abs(nose.x - p(FACE_IDX.cheekL).x) * imgW;
+    const rightW = Math.abs(p(FACE_IDX.cheekR).x - nose.x) * imgW;
     let symmetry = 100 - (Math.abs(leftW - rightW) / ((leftW + rightW) || 1) * 100);
     symmetry = Math.max(0, Math.min(100, symmetry));
 
@@ -704,7 +705,8 @@
        isCameraPaused = false; // Resume camera after analysis upload is handled
        const lm = has ? results.multiFaceLandmarks[0] : null;
        if(lm) {
-          const shapeInfo = analyzeFaceShape(lm);
+          // Since analysisCanvas is used, its size is CANVAS_W and CANVAS_H
+          const shapeInfo = analyzeFaceShape(lm, CANVAS_W, CANVAS_H);
           if(!shapeInfo) { analysisStatus.textContent = 'ตรวจจับโครงหน้าไม่สำเร็จ'; return; }
           analysisResult.classList.add('show');
           analysisPlaceholder.classList.add('hidden');
@@ -994,7 +996,7 @@
       analysisStatus.textContent = 'ไม่พบใบหน้า กรุณาลองใหม่อีกครั้ง';
       return;
     }
-    const info = analyzeFaceShape(latestLandmarks);
+    const info = analyzeFaceShape(latestLandmarks, CANVAS_W, CANVAS_H);
     if(!info){
       analysisStatus.textContent = 'วิเคราะห์ไม่สำเร็จ ลองขยับให้เห็นใบหน้าชัดขึ้น';
       return;

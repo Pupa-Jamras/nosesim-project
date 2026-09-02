@@ -673,7 +673,14 @@
                  if (!isProcessingVideoFrame) {
                      clearInterval(waitInterval);
                      isAnalysisUploadProcessing = true;
-                     await faceMesh.send({image: analysisCanvas});
+                     try {
+                         await faceMesh.send({image: analysisCanvas});
+                     } catch(err) {
+                         console.error(err);
+                         isAnalysisUploadProcessing = false;
+                         isCameraPaused = false;
+                         analysisStatus.textContent = 'วิเคราะห์ล้มเหลว กรุณาลองใหม่อีกครั้ง';
+                     }
                  }
              }, 50);
          };
@@ -707,7 +714,7 @@
           document.getElementById('resRec').textContent = shapeInfo.rec;
           document.getElementById('resRecDesc').textContent = shapeInfo.recDesc;
           
-          autoApplyBtn.dataset.preset = JSON.stringify(shapeInfo.preset);
+          document.getElementById('autoApplyBtn').dataset.preset = JSON.stringify(shapeInfo.preset);
           
           const score = shapeInfo.symmetryScore || 0;
           symScore.textContent = Math.round(score) + '%';

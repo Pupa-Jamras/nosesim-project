@@ -474,7 +474,8 @@
   const symBar = document.getElementById('symBar');
   const symScore = document.getElementById('symScore');
 
-  const FACE_IDX = { top:10, chin:152, cheekL:234, cheekR:454, jawL:172, jawR:397, foreheadL:21, foreheadR:251 };
+  // Use accurate landmarks: jaw angle (132, 361) and temporal/forehead (68, 298)
+  const FACE_IDX = { top:10, chin:152, cheekL:234, cheekR:454, jawL:132, jawR:361, foreheadL:68, foreheadR:298 };
   const NOSE_PATHS = {
     straight: "M30,6 C18,30 16,50 22,66 C26,78 32,86 40,90",
     subtle:   "M32,6 C16,26 14,46 24,64 C30,78 34,84 42,88",
@@ -524,7 +525,11 @@
     let symmetry = 100 - (Math.abs(leftW - rightW) / ((leftW + rightW) || 1) * 100);
     symmetry = Math.max(0, Math.min(100, symmetry));
 
-    return { ...SHAPE_INFO[key], symmetryScore: symmetry };
+    return { 
+        ...SHAPE_INFO[key], 
+        symmetryScore: symmetry,
+        debugRatios: `(W/H:${widthHeightRatio.toFixed(2)}, J/C:${jawCheekRatio.toFixed(2)}, F/J:${foreheadJawRatio.toFixed(2)})`
+    };
   }
 
   const CANVAS_W = 480, CANVAS_H = 360;
@@ -717,7 +722,7 @@
           analysisResult.classList.add('show');
           analysisPlaceholder.classList.add('hidden');
           
-          document.getElementById('arShapeName').textContent = shapeInfo.name;
+          document.getElementById('arShapeName').innerHTML = `${shapeInfo.name} <span style="font-size:10px; color:#666;">${shapeInfo.debugRatios}</span>`;
           document.getElementById('arShapeDesc').textContent = shapeInfo.desc;
           document.getElementById('arRecName').textContent = shapeInfo.rec;
           document.getElementById('arRecDesc').textContent = shapeInfo.recDesc;
@@ -1030,7 +1035,7 @@
     }
 
     analysisStatus.textContent = 'วิเคราะห์สำเร็จ!';
-    arShapeName.textContent = info.name;
+    arShapeName.innerHTML = `${info.name} <span style="font-size:10px; color:#666;">${info.debugRatios}</span>`;
     arShapeDesc.textContent = info.desc;
     arRecName.textContent = info.rec;
     arRecDesc.textContent = info.recDesc;

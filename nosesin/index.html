@@ -1420,238 +1420,175 @@
 })();
 
     
-/* ---------- CUSTOM 3D VIEWER LOGIC ---------- */
+/* ---------- CUSTOM THREE.JS VIEWER LOGIC ---------- */
 const threeBtn = document.getElementById('threeBtn');
 const threeModal = document.getElementById('threeModal');
 const closeThreeBtn = document.getElementById('closeThreeBtn');
 const threeContainer = document.getElementById('threeContainer');
 
-let pointCloudCanvas = document.createElement('canvas');
-pointCloudCanvas.style.position = 'absolute';
-pointCloudCanvas.style.top = '0';
-pointCloudCanvas.style.left = '0';
-pointCloudCanvas.style.width = '100%';
-pointCloudCanvas.style.height = '100%';
-pointCloudCanvas.style.zIndex = '1';
-threeContainer.appendChild(pointCloudCanvas);
-const pcCtx = pointCloudCanvas.getContext('2d');
+// Hide the old 2D Canvas
+const pointCloudCanvas = document.getElementById('pointCloudCanvas');
+if (pointCloudCanvas) pointCloudCanvas.style.display = 'none';
 
-let yaw = 0; let pitch = 0;
-let isDragging = false; let lastX=0, lastY=0;
+let scene, camera, renderer, faceMesh, wireframe;
+let isThreeInitialized = false;
 
-threeModal.addEventListener('mousedown', (e) => { isDragging=true; lastX=e.clientX; lastY=e.clientY; });
-threeModal.addEventListener('mousemove', (e) => {
-    if(!isDragging) return;
-    yaw += (e.clientX - lastX) * 0.01;
-    pitch += (e.clientY - lastY) * 0.01;
-    lastX=e.clientX; lastY=e.clientY;
-});
-threeModal.addEventListener('mouseup', () => { isDragging=false; });
-threeModal.addEventListener('mouseleave', () => { isDragging=false; });
+function initThreeJS() {
+    if (isThreeInitialized) return;
+    isThreeInitialized = true;
 
-threeModal.addEventListener('touchstart', (e) => { isDragging=true; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; });
-threeModal.addEventListener('touchmove', (e) => {
-    if(!isDragging) return;
-    yaw += (e.touches[0].clientX - lastX) * 0.01;
-    pitch += (e.touches[0].clientY - lastY) * 0.01;
-    lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
-});
-threeModal.addEventListener('touchend', () => { isDragging=false; });
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a1a);
 
-function renderPointCloud() {
-    if(!threeModal.classList.contains('hidden')) {
-        const w = threeContainer.clientWidth || window.innerWidth;
-        const h = threeContainer.clientHeight || window.innerHeight;
-        pointCloudCanvas.width = w; pointCloudCanvas.height = h;
-        
-        pcCtx.clearRect(0, 0, w, h);
-        
-        if(!window.latestLandmarks) {
-            pcCtx.fillStyle = '#ff4444';
-            pcCtx.beginPath(); pcCtx.arc(w/2, h/2 - 50, 40, 0, 2*Math.PI); pcCtx.fill();
-            pcCtx.fillStyle = 'white'; pcCtx.font = '24px Arial'; pcCtx.textAlign = 'center';
-            pcCtx.fillText('AI VISION OFF - NO FACE DATA', w/2, h/2 + 30);
-            pcCtx.font = '16px Arial'; pcCtx.fillStyle = '#aaa';
-            pcCtx.fillText('Please turn on AI Vision or make sure your face is visible', w/2, h/2 + 60);
-        } else {
-            const bridgeSlider = document.getElementById("bridgeSlider"); const tipSlider = document.getElementById("tipSlider"); const bridge = parseInt(bridgeSlider.value,10)/100 || 0;
-            const tipAdj = parseInt(tipSlider.value,10)/100 || 0;
-            
-            pcCtx.fillStyle = '#00FF00';
-                                                                                                if(isNaN(yaw)) yaw = 0;
-              if(isNaN(pitch)) pitch = 0;
-              const cx = w/2; const cy = h/2;
-              const scale = Math.min(w, h) * 0.45;
+    const w = threeContainer.clientWidth || window.innerWidth;
+    const h = threeContainer.clientHeight || window.innerHeight;
 
-              // Generate procedural mesh topology once
-              if(!window.meshPairs && window.latestLandmarks && window.latestLandmarks.length > 0) {
-                  window.meshPairs = [];
-                  const pts = window.latestLandmarks;
-                  for(let i=0; i<468; i++) {
-                      if(!pts[i]) continue;
-                      // Find 3 nearest neighbors based on initial 3D position
-                      let dists = [];
-                      for(let j=0; j<468; j++) {
-                          if(i===j || !pts[j]) continue;
-                          let dx = pts[i].x - pts[j].x;
-                          let dy = pts[i].y - pts[j].y;
-                          let dz = (pts[i].z||0) - (pts[j].z||0);
-                          let d = dx*dx + dy*dy + dz*dz;
-                          dists.push({idx: j, d: d});
-                      }
-                      dists.sort((a,b) => a.d - b.d);
-                      // Connect to 3 closest points
-                      for(let k=0; k<3; k++) {
-                          if(dists[k]) {
-                             // Avoid duplicates (only add if i < j)
-                             if(i < dists[k].idx) window.meshPairs.push([i, dists[k].idx]);
-                          }
-                      }
-                  }
-              }
-              
-                                          let avgX = 0.5, avgY = 0.5;
-              if(window.latestLandmarks && window.latestLandmarks.length === 468) {
-                  let sx = 0, sy = 0;
-                  for(let i=0; i<468; i++) { sx += window.latestLandmarks[i].x; sy += window.latestLandmarks[i].y; }
-                  avgX = sx / 468; avgY = sy / 468;
-              }
+    camera = new THREE.PerspectiveCamera(35, w / h, 0.1, 100);
+    camera.position.z = 2.5;
 
-                            // 1. GENERATE PROCEDURAL TRIANGLES USING DELAUNATOR
-              if(!window.meshTriangles && window.latestLandmarks && window.latestLandmarks.length === 468 && window.Delaunator) {
-                  const coords = [];
-                  for(let i=0; i<468; i++) {
-                      // Project 3D landmarks to 2D for Delaunay triangulation
-                      coords.push(window.latestLandmarks[i].x, window.latestLandmarks[i].y);
-                  }
-                  const delaunay = new window.Delaunator(coords);
-                  window.meshTriangles = [];
-                  for (let i = 0; i < delaunay.triangles.length; i += 3) {
-                      // Exclude triangles that are too large (e.g. connecting ears across the background)
-                      const p1 = window.latestLandmarks[delaunay.triangles[i]];
-                      const p2 = window.latestLandmarks[delaunay.triangles[i+1]];
-                      const p3 = window.latestLandmarks[delaunay.triangles[i+2]];
-                      
-                      const d12 = Math.hypot(p1.x-p2.x, p1.y-p2.y);
-                      const d23 = Math.hypot(p2.x-p3.x, p2.y-p3.y);
-                      const d31 = Math.hypot(p3.x-p1.x, p3.y-p1.y);
-                      
-                      // Max edge length filter to avoid background triangles
-                      if(d12 < 0.15 && d23 < 0.15 && d31 < 0.15) {
-                          window.meshTriangles.push([
-                              delaunay.triangles[i],
-                              delaunay.triangles[i+1],
-                              delaunay.triangles[i+2]
-                          ]);
-                      }
-                  }
-              }
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(w, h);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    threeContainer.appendChild(renderer.domElement);
 
-              // 2. CAPTURE TEXTURE
-              if(!window.offCanvas) {
-                  window.offCanvas = document.createElement('canvas');
-                  window.offCtx = window.offCanvas.getContext('2d', {willReadFrequently: true});
-              }
-              const video = document.querySelector('video');
-              let imgData = null;
-              if(video && video.videoWidth > 0) {
-                  window.offCanvas.width = video.videoWidth;
-                  window.offCanvas.height = video.videoHeight;
-                  window.offCtx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-                  try { imgData = window.offCtx.getImageData(0, 0, video.videoWidth, video.videoHeight).data; } catch(e){}
-              }
-              
-              // 3. PROJECT POINTS
-              const points2d = [];
-              for(let i=0; i<468; i++) {
-                  const lm = window.latestLandmarks[i];
-                  if(!lm) { points2d.push(null); continue; }
-                  
-                  let x = (lm.x - avgX);
-                  let y = (lm.y - avgY);
-                  let z = -(lm.z || 0);
-                  
-                  if(window.NOSE_IDX && window.NOSE_IDX.includes(i)) {
-                     z += bridge * 0.2;
-                     if(i===4 || i===1) z += tipAdj * 0.3;
-                  }
-                  
-                  let x1 = x * Math.cos(yaw) - z * Math.sin(yaw);
-                  let z1 = z * Math.cos(yaw) + x * Math.sin(yaw);
-                  
-                  let y1 = y * Math.cos(pitch) - z1 * Math.sin(pitch);
-                  let z2 = z1 * Math.cos(pitch) + y * Math.sin(pitch);
-                  
-                  const fov = 2.0;
-                  const projScale = fov / (fov + z2);
-                  
-                  const px = cx + (x1 * scale * projScale);
-                  const py = cy + (y1 * scale * projScale);
-                  
-                  points2d.push({x: px, y: py, z: z2, u: lm.x, v: lm.y});
-              }
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
 
-              // 4. RENDER SOLID TRIANGLES
-              if(window.meshTriangles && imgData && video && video.videoWidth > 0) {
-                  const renderList = [];
-                  for(let t=0; t<window.meshTriangles.length; t++) {
-                      const tri = window.meshTriangles[t];
-                      const p1 = points2d[tri[0]]; const p2 = points2d[tri[1]]; const p3 = points2d[tri[2]];
-                      if(!p1 || !p2 || !p3 || isNaN(p1.x) || isNaN(p2.x) || isNaN(p3.x)) continue;
-                      
-                      // Calculate average Z for Painter's Algorithm
-                      const avgZ = (p1.z + p2.z + p3.z) / 3;
-                      
-                      // Calculate texture color at the center of the triangle
-                      let u = (p1.u + p2.u + p3.u) / 3;
-                      let v = (p1.v + p2.v + p3.v) / 3;
-                      
-                      let mappedX = window.currentSourceType === 'video' ? (1.0 - u) : u;
-                      let vx = Math.max(0, Math.min(video.videoWidth-1, Math.floor(mappedX * video.videoWidth)));
-                      let vy = Math.max(0, Math.min(video.videoHeight-1, Math.floor(v * video.videoHeight)));
-                      let idx = (vy * video.videoWidth + vx) * 4;
-                      let color = "rgb(" + imgData[idx] + "," + imgData[idx+1] + "," + imgData[idx+2] + ")";
-                      
-                      renderList.push({p1, p2, p3, z: avgZ, color: color});
-                  }
-                  
-                  // Sort back-to-front
-                  renderList.sort((a,b) => b.z - a.z);
-                  
-                  // Draw
-                  renderList.forEach(tri => {
-                      pcCtx.fillStyle = tri.color;
-                      pcCtx.strokeStyle = tri.color; // Hide seams between triangles
-                      pcCtx.lineWidth = 1;
-                      pcCtx.beginPath();
-                      pcCtx.moveTo(tri.p1.x, tri.p1.y);
-                      pcCtx.lineTo(tri.p2.x, tri.p2.y);
-                      pcCtx.lineTo(tri.p3.x, tri.p3.y);
-                      pcCtx.closePath();
-                      pcCtx.fill();
-                      pcCtx.stroke();
-                  });
-              }}
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight.position.set(0, 0.5, 1);
+    scene.add(directionalLight);
+
+    if (window.THREE.OrbitControls) {
+        const controls = new window.THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
     }
-    requestAnimationFrame(renderPointCloud);
 }
 
-requestAnimationFrame(renderPointCloud);
+function updateThreeJS() {
+    if (!window.latestLandmarks || window.latestLandmarks.length !== 468) return;
+    
+    const pts = window.latestLandmarks;
+    
+    if (!faceMesh && window.Delaunator && window.THREE) {
+        const coords = [];
+        for(let i=0; i<468; i++) { coords.push(pts[i].x, pts[i].y); }
+        const delaunay = new window.Delaunator(coords);
+        
+        const indices = [];
+        for (let i = 0; i < delaunay.triangles.length; i += 3) {
+            const p1 = pts[delaunay.triangles[i]];
+            const p2 = pts[delaunay.triangles[i+1]];
+            const p3 = pts[delaunay.triangles[i+2]];
+            
+            const d12 = Math.hypot(p1.x-p2.x, p1.y-p2.y);
+            const d23 = Math.hypot(p2.x-p3.x, p2.y-p3.y);
+            const d31 = Math.hypot(p3.x-p1.x, p3.y-p1.y);
+            
+            if(d12 < 0.15 && d23 < 0.15 && d31 < 0.15) {
+                indices.push(delaunay.triangles[i], delaunay.triangles[i+1], delaunay.triangles[i+2]);
+            }
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setIndex(indices);
+        geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(468 * 3), 3));
+        geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(468 * 2), 2));
+        
+        const video = document.querySelector('video');
+        let material;
+        if(video && video.videoWidth > 0) {
+            const videoTexture = new THREE.VideoTexture(video);
+            videoTexture.minFilter = THREE.LinearFilter;
+            videoTexture.magFilter = THREE.LinearFilter;
+            videoTexture.format = THREE.RGBFormat;
+            
+            material = new THREE.MeshStandardMaterial({
+                map: videoTexture,
+                roughness: 0.4,
+                metalness: 0.1,
+                side: THREE.DoubleSide
+            });
+        } else {
+            material = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+        }
+
+        faceMesh = new THREE.Mesh(geometry, material);
+        
+        const wireMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.15 });
+        wireframe = new THREE.LineSegments(new THREE.WireframeGeometry(geometry), wireMat);
+        faceMesh.add(wireframe);
+
+        scene.add(faceMesh);
+    }
+
+    if (!faceMesh) return;
+
+    const bridgeSlider = document.getElementById("bridgeSlider"); 
+    const tipSlider = document.getElementById("tipSlider"); 
+    const bridge = parseInt(bridgeSlider.value,10)/100 || 0;
+    const tipAdj = parseInt(tipSlider.value,10)/100 || 0;
+
+    let sx = 0, sy = 0, sz = 0;
+    for(let i=0; i<468; i++) { sx += pts[i].x; sy += pts[i].y; sz += (pts[i].z||0); }
+    const avgX = sx / 468; const avgY = sy / 468; const avgZ = sz / 468;
+
+    const positions = faceMesh.geometry.attributes.position.array;
+    const uvs = faceMesh.geometry.attributes.uv.array;
+
+    for (let i = 0; i < 468; i++) {
+        const lm = pts[i];
+        
+        let x = (lm.x - avgX) * 3.5;
+        let y = -(lm.y - avgY) * 3.5; 
+        let z = -(lm.z - avgZ) * 3.5;
+        
+        if(window.NOSE_IDX && window.NOSE_IDX.includes(i)) {
+            z += bridge * 0.4;
+            if(i===4 || i===1) z += tipAdj * 0.5;
+        }
+
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+
+        let mappedX = window.currentSourceType === 'video' ? (1.0 - lm.x) : lm.x;
+        uvs[i * 2] = mappedX;
+        uvs[i * 2 + 1] = 1.0 - lm.y;
+    }
+
+    faceMesh.geometry.attributes.position.needsUpdate = true;
+    faceMesh.geometry.attributes.uv.needsUpdate = true;
+    faceMesh.geometry.computeVertexNormals(); 
+
+    renderer.render(scene, camera);
+}
+
+function renderLoop() {
+    if (!threeModal.classList.contains('hidden')) {
+        initThreeJS();
+        updateThreeJS();
+    }
+    requestAnimationFrame(renderLoop);
+}
+requestAnimationFrame(renderLoop);
 
 if(threeBtn){
   threeBtn.addEventListener('click', () => {
     threeModal.classList.remove('hidden');
   });
 }
-
 if(closeThreeBtn){
   closeThreeBtn.addEventListener('click', () => {
     threeModal.classList.add('hidden');
   });
 }
+})();
 </script>
 </body>
 </html>
+
+
 
 
 

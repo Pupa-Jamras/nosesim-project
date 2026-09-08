@@ -1449,6 +1449,7 @@
 
     const tMaterial = new THREE.PointsMaterial({ size: 0.05, color: 0x6fae8a, transparent:true, opacity: 0.9 });
     tParticles = new THREE.Points(tGeometry, tMaterial);
+    tParticles.frustumCulled = false;
     tScene.add(tParticles);
     
     threeInit = true;
@@ -1460,6 +1461,7 @@
       const w = threeContainer.clientWidth; const h = threeContainer.clientHeight;
       if(w > 0 && h > 0 && (tRenderer.domElement.width !== w || tRenderer.domElement.height !== h)) { tRenderer.setSize(w, h, false); tCamera.aspect = w / h; tCamera.updateProjectionMatrix(); }
       tControls.update();
+      updateThreePointCloud();
       tRenderer.render(tScene, tCamera);
     }
   }
@@ -1467,7 +1469,7 @@
   function updateThreePointCloud() {
     if(!latestLandmarks) return;
     
-    const imgData = ctx.getImageData(0, 0, CANVAS_W, CANVAS_H).data;
+    let imgData; try { imgData = ctx.getImageData(0, 0, CANVAS_W, CANVAS_H).data; } catch(e) { imgData = new Uint8ClampedArray(CANVAS_W * CANVAS_H * 4); }
     const positions = tGeometry.attributes.position.array;
     const colors = tGeometry.attributes.color.array;
 
@@ -1511,7 +1513,7 @@
     threeBtn.addEventListener('click', () => {
       threeModal.classList.remove('hidden');
       threeModal.getBoundingClientRect(); // Force reflow
-      initThree();
+      try { initThree(); } catch(e) { document.getElementById('threeContainer').innerHTML = '<h1 style="color:red">' + e.message + '</h1>'; }
       updateThreePointCloud();
       animateThree();
     });
@@ -1530,6 +1532,10 @@
 </script>
 </body>
 </html>
+
+
+
+
 
 
 

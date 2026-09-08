@@ -707,7 +707,7 @@
     }
   }
 
-  const NOSE_IDX = [168,6,197,195,5,4,1,45,275,49,279,129,358,98,327,2];
+  window.NOSE_IDX = [168,6,197,195,5,4,1,45,275,49,279,129,358,98,327,2];
   const RING_LEN = 339.3;
   const SMOOTHING_FACTOR = 0.5;
 
@@ -911,7 +911,7 @@
        return; // SKIP normal drawing since this is just for analysis box
     }
 
-    latestLandmarks = has ? results.multiFaceLandmarks[0] : null;
+    latestLandmarks = has ? results.multiFaceLandmarks[0] : null; window.latestLandmarks = latestLandmarks;
     
     if(latestLandmarks && state === 'filter') updateHUD(latestLandmarks);
 
@@ -1036,8 +1036,8 @@
     }
 
     let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
-    NOSE_IDX.forEach(i => {
-      const lm = latestLandmarks[i];
+    window.NOSE_IDX.forEach(i => {
+      const lm = window.latestLandmarks[i];
       if(!lm) return;
       const px = getLmX(lm);
       const py = lm.y*CANVAS_H;
@@ -1346,7 +1346,7 @@
        return;
     }
 
-    if(!latestLandmarks) {
+    if(!window.latestLandmarks) {
       analysisStatus.textContent = 'ไม่พบใบหน้า กรุณาจัดหน้าให้อยู่ในกล้อง';
       return;
     }
@@ -1465,7 +1465,7 @@ function renderPointCloud() {
         
         pcCtx.clearRect(0, 0, w, h);
         
-        if(!latestLandmarks) {
+        if(!window.latestLandmarks) {
             pcCtx.fillStyle = '#ff4444';
             pcCtx.beginPath(); pcCtx.arc(w/2, h/2 - 50, 40, 0, 2*Math.PI); pcCtx.fill();
             pcCtx.fillStyle = 'white'; pcCtx.font = '24px Arial'; pcCtx.textAlign = 'center';
@@ -1482,14 +1482,14 @@ function renderPointCloud() {
             
             let pointsDrawn = 0;
             for(let i=0; i<468; i++) {
-                const lm = latestLandmarks[i];
+                const lm = window.latestLandmarks[i];
                 if(!lm) continue;
                 
                 let x = (lm.x - 0.5);
                 let y = (lm.y - 0.5);
                 let z = -(lm.z || 0);
                 
-                if(NOSE_IDX.includes(i)) {
+                if(window.NOSE_IDX.includes(i)) {
                    z += bridge * 0.2;
                    if(i===4 || i===1) z += tipAdj * 0.3;
                 }
@@ -1537,5 +1537,7 @@ if(closeThreeBtn){
 </script>
 </body>
 </html>
+
+
 
 

@@ -1462,16 +1462,17 @@
           pointCloudCanvas.width = w; pointCloudCanvas.height = h;
           
           pcCtx.clearRect(0, 0, w, h);
-          pcCtx.fillStyle = 'red'; pcCtx.fillRect(w/2 - 100, h/2 - 100, 200, 200);
+          if(!latestLandmarks) { pcCtx.font='24px Noto Sans Thai, sans-serif'; pcCtx.fillStyle='#c99a5b'; pcCtx.textAlign='center'; pcCtx.fillText('????????????????????? 3D... ?????????????', w/2, h/2); }
+          pcCtx.font = '50px Arial'; pcCtx.fillStyle = 'white'; pcCtx.fillText(latestLandmarks ? 'YES ' + latestLandmarks.length : 'NO LANDMARKS', w/2 - 100, h/2);
           
-          if(latestLandmarks) {
+          if(latestLandmarks) { try {
               const bridge = parseInt(bridgeSlider.value,10)/100 || 0;
               const tipAdj = parseInt(tipSlider.value,10)/100 || 0;
               
               pcCtx.fillStyle = '#00FF00';
               
               const cx = w/2; const cy = h/2;
-              const scale = Math.min(w, h) * 0.8;
+              const scale = Math.min(w, h) * 0.4;
               
               for(let i=0; i<468; i++) {
                   const lm = latestLandmarks[i];
@@ -1499,10 +1500,8 @@
                   const py = cy + (y1 * scale * projScale);
                   
                   pcCtx.beginPath();
-                  pcCtx.arc(px, py, 3 * projScale, 0, 2*Math.PI);
-                  pcCtx.fill();
-              }
-          }
+                  pcCtx.arc(px, py, 5 * projScale, 0, 2*Math.PI);
+                  pcCtx.fill(); } } catch(err) { pcCtx.font='20px Arial'; pcCtx.fillStyle='red'; pcCtx.fillText(err.stack || err.message, 50, 50); } }
       }
       requestAnimationFrame(renderPointCloud);
   }
@@ -1522,5 +1521,9 @@
   }
 </script>
 </body>
+
+
+
+
 
 

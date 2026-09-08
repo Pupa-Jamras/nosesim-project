@@ -1447,7 +1447,7 @@
     tGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     tGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    const tMaterial = new THREE.PointsMaterial({ size: 0.02, vertexColors: true, transparent:true, opacity: 0.9 });
+    const tMaterial = new THREE.PointsMaterial({ size: 0.05, color: 0x6fae8a, transparent:true, opacity: 0.9 });
     tParticles = new THREE.Points(tGeometry, tMaterial);
     tScene.add(tParticles);
     
@@ -1457,6 +1457,8 @@
   function animateThree() {
     if(!threeModal.classList.contains('hidden')) {
       requestAnimationFrame(animateThree);
+      const w = threeContainer.clientWidth; const h = threeContainer.clientHeight;
+      if(w > 0 && h > 0 && (tRenderer.domElement.width !== w || tRenderer.domElement.height !== h)) { tRenderer.setSize(w, h, false); tCamera.aspect = w / h; tCamera.updateProjectionMatrix(); }
       tControls.update();
       tRenderer.render(tScene, tCamera);
     }
@@ -1508,6 +1510,7 @@
   if(threeBtn){
     threeBtn.addEventListener('click', () => {
       threeModal.classList.remove('hidden');
+      threeModal.getBoundingClientRect(); // Force reflow
       initThree();
       updateThreePointCloud();
       animateThree();
@@ -1527,6 +1530,9 @@
 </script>
 </body>
 </html>
+
+
+
 
 
 

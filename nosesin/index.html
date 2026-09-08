@@ -73,6 +73,22 @@
   .btn-outline:hover { background: rgba(201, 154, 91, 0.1); }
   .btn-outline:active { background: rgba(201, 154, 91, 0.2); }
   .btn-outline.active { background: rgba(111, 174, 138, 0.2); border-color: var(--green); color: var(--green); }
+
+  /* ---------- before/after split compare ---------- */
+  .before-canvas{position:absolute; top:0; left:0; z-index:6; pointer-events:none;}
+  .compare-divider{position:absolute; top:0; bottom:0; width:2px; background:var(--bronze); z-index:7; transform:translateX(-1px); cursor:ew-resize; pointer-events:auto;}
+  .compare-handle{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:30px; height:30px; border-radius:50%; background:var(--bronze); color:#14181a; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:bold; box-shadow:0 2px 10px rgba(0,0,0,0.5);}
+  .compare-label{position:absolute; top:12px; z-index:8; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.05em; background:rgba(20,24,26,0.75); color:var(--bronze-soft); padding:5px 10px; border-radius:20px; pointer-events:none;}
+  .compare-label-before{left:12px;}
+  .compare-label-after{right:12px;}
+
+  /* ---------- analysis nudge banner (connects step 1 -> step 2) ---------- */
+  .analysis-nudge{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; background:rgba(201,154,91,0.08); border:1px solid var(--bronze-deep); border-radius:10px; padding:12px 16px; margin-bottom:16px;}
+  .analysis-nudge-text{font-size:12px; color:var(--bronze-soft); line-height:1.5;}
+  .analysis-nudge-text strong{color:var(--cream); display:block; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.05em; margin-bottom:2px;}
+  .analysis-nudge .btn{padding:7px 14px; font-size:11px; white-space:nowrap; flex-shrink:0;}
+  .analysis-nudge.done{background:rgba(111,174,138,0.08); border-color:var(--green);}
+  .analysis-nudge.done .analysis-nudge-text strong{color:var(--green);}
   
   .upload-btn{font-family:'Inter',sans-serif; font-size:13px; padding:11px 22px; border-radius:8px; border:1px dashed var(--bronze-deep); background:transparent; color:var(--bronze-soft); cursor:pointer; width:100%; margin-top: 10px; transition:all .2s; display: flex; align-items: center; justify-content: center; gap: 8px;}
   .upload-btn:hover{background: rgba(201,154,91,0.1);}
@@ -105,6 +121,9 @@
   .tool-cam-side{position:relative; background:#101415; display:flex; align-items:center; justify-content:center; padding:24px; min-height:400px;}
   .live-frame{position:relative; border-radius:10px; overflow:hidden; line-height:0; box-shadow:0 0 0 0.5px var(--line); width:100%; max-width:440px; aspect-ratio:4/3; background:#0c0f10;}
   .live-frame canvas{width:100%; height:100%; display:block; object-fit:cover;}
+  #dualViewWrapper{display:none; width:100%; gap:8px;}
+  #dualViewWrapper.active{display:flex !important;}
+  #dualViewWrapper > div{flex:1; min-width:0;}
   
   .ai-hud{position:absolute; top:12px; right:12px; background:rgba(0,0,0,0.6); padding:10px; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#0f0; z-index:10; pointer-events:none; border:1px solid #0f0; line-height:1.4;}
   .ai-hud div{margin-bottom:4px;}
@@ -236,20 +255,33 @@
 
   <section class="hero">
     <div class="wrap">
-      <span class="eyebrow">ฟิลเตอร์วิเคราะห์จมูกแบบเรียลไทม์</span>
+      <span class="eyebrow">ขั้นตอนที่ 2 · ปรับแต่งทรงจมูก</span>
       <h1>เปิดกล้อง แล้วดูรูปทรงจมูกใหม่<br><em>ขยับหน้าได้ ฟิลเตอร์ตามหน้าคุณ</em></h1>
       <p class="lead">ระบบตรวจจับตำแหน่งจมูกจากใบหน้าคุณสด ๆ ผ่านกล้อง แล้วปรับสันและปีกจมูกแบบเรียลไทม์ เหมือนฟิลเตอร์กล้อง ไม่มีการบันทึกหรืออัปโหลดวิดีโอที่ไหนทั้งสิ้น</p>
 
       <div class="tool" id="tool">
-        <div class="tool-cam-side">
-          <div class="live-frame" id="liveFrame">
-            <div class="live-badge"><span class="dot"></span><span id="sourceBadgeText">LIVE</span></div>
-            <div class="ai-hud hidden" id="aiHud">
-              <div style="color:#fff; border-bottom:1px solid #333; padding-bottom:4px; margin-bottom:6px;">AI TRACKING DATA</div>
-              <div>YAW: <span id="hudYaw">0.0</span>°</div>
-              <div>PITCH: <span id="hudPitch">0.0</span>°</div>
-              <div>SMILE: <span id="hudSmile">0</span>%</div>
+        <div class="tool-cam-side" style="flex-direction:column; padding:16px; gap:10px; align-items:stretch;">
+          <!-- Dual view wrapper: shown when compare mode ON -->
+          <div id="dualViewWrapper" style="display:none; width:100%; gap:8px; flex-direction:row;">
+            <!-- Before (original) -->
+            <div style="flex:1; position:relative; border-radius:10px; overflow:hidden; background:#0c0f10; box-shadow:0 0 0 0.5px var(--line); aspect-ratio:4/3; line-height:0;">
+              <canvas id="beforeSideCanvas" style="width:100%; height:100%; display:block; object-fit:cover;"></canvas>
+              <div style="position:absolute; top:8px; left:8px; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.05em; background:rgba(20,24,26,0.75); color:var(--bronze-soft); padding:4px 9px; border-radius:20px; pointer-events:none;">ต้นฉบับ</div>
             </div>
+            <!-- After (with filter) -->
+            <div style="flex:1; position:relative; border-radius:10px; overflow:hidden; background:#0c0f10; box-shadow:0 0 0 0.5px var(--line); aspect-ratio:4/3; line-height:0;" id="afterSideWrapper">
+              <div class="ai-hud hidden" id="aiHud" style="top:8px; right:8px;">
+                <div style="color:#fff; border-bottom:1px solid #333; padding-bottom:4px; margin-bottom:6px;">AI TRACKING DATA</div>
+                <div>YAW: <span id="hudYaw">0.0</span>°</div>
+                <div>PITCH: <span id="hudPitch">0.0</span>°</div>
+                <div>SMILE: <span id="hudSmile">0</span>%</div>
+              </div>
+              <div style="position:absolute; top:8px; left:8px; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.05em; background:rgba(20,24,26,0.75); color:var(--bronze-soft); padding:4px 9px; border-radius:20px; pointer-events:none; z-index:10;">หลังปรับ</div>
+            </div>
+          </div>
+          <!-- Single view: shown when compare mode OFF -->
+          <div class="live-frame" id="liveFrame" style="width:100%; max-width:440px; margin:0 auto;">
+            <div class="live-badge"><span class="dot"></span><span id="sourceBadgeText">LIVE</span></div>
             <div id="captureOverlay" class="hidden" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:20; display:flex; align-items:center; justify-content:center; color:white; font-size:72px; font-weight:bold; text-shadow:0 2px 10px rgba(0,0,0,0.5); pointer-events:none; transition: opacity 0.2s;"></div>
             <div class="cam-fallback hidden" id="camFallback">
               <span>ไม่พบสัญญาณกล้องในหน้านี้ — ลองกลับไปเริ่มสแกนใบหน้าอีกครั้ง</span>
@@ -264,26 +296,59 @@
             </div>
             <button class="upload-btn" id="appUploadBtn" style="width:auto; margin:0; padding:6px 12px; font-size:11px;">อัปโหลดรูป</button>
           </div>
+
+          <div class="analysis-nudge" id="analysisNudge">
+            <div class="analysis-nudge-text">
+              <strong>ขั้นตอนที่ 1 · แนะนำก่อนปรับ</strong>
+              <span id="analysisNudgeMsg">วิเคราะห์โครงหน้าก่อน เพื่อให้ระบบแนะนำทรงจมูกที่เข้ากับใบหน้าคุณที่สุด</span>
+            </div>
+            <button class="btn btn-outline" id="analysisNudgeBtn" style="border-color:var(--bronze-soft);" onclick="document.getElementById('analysis').scrollIntoView({behavior:'smooth', block:'start'})">✨ ดูผลแนะนำ</button>
+          </div>
+          
+          <div class="preset-row" style="display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; padding-bottom:4px;">
+            <button class="btn btn-outline preset-btn" data-preset="[15,-10,15,20,10,20,30]" style="white-space:nowrap; padding: 4px 10px; font-size:12px; border-color:var(--bronze-soft);">💧 ทรงหยดน้ำ</button>
+            <button class="btn btn-outline preset-btn" data-preset="[25,10,25,30,-10,10,40]" style="white-space:nowrap; padding: 4px 10px; font-size:12px; border-color:var(--bronze-soft);">👱‍♀️ ทรงบาร์บี้</button>
+            <button class="btn btn-outline preset-btn" data-preset="[40,20,0,10,-20,-10,50]" style="white-space:nowrap; padding: 4px 10px; font-size:12px; border-color:var(--bronze-soft);">🦅 ทรงสายฝอ</button>
+            <button class="btn btn-outline preset-btn" data-preset="[0,0,0,0,0,0,0]" style="white-space:nowrap; padding: 4px 10px; font-size:12px; border-color:var(--muted);">🔄 คืนค่า</button>
+          </div>
+          
           <div class="slider-row">
-            <div class="label-row"><span>สันจมูก / ความโด่ง</span><span id="bridgeValLabel" class="mono">0%</span></div>
+            <div class="label-row"><span>ดั้ง/สันจมูก (Bridge)</span><span id="bridgeValLabel" class="mono">0%</span></div>
             <input type="range" id="bridgeSlider" min="-100" max="100" value="0">
           </div>
           <div class="slider-row">
-            <div class="label-row"><span>ความเรียวของปีกจมูก</span><span id="widthValLabel" class="mono">0%</span></div>
+            <div class="label-row"><span>ลดฮัมพ์/สโลป (Hump/Slope)</span><span id="humpValLabel" class="mono">0%</span></div>
+            <input type="range" id="humpSlider" min="-100" max="100" value="0">
+          </div>
+          <div class="slider-row">
+            <div class="label-row"><span>ความกว้างปีกจมูก (Alar Width)</span><span id="alarValLabel" class="mono">0%</span></div>
+            <input type="range" id="alarSlider" min="-100" max="100" value="0">
+          </div>
+          <div class="slider-row">
+            <div class="label-row"><span>ความกว้างสัน (Bridge Width)</span><span id="widthValLabel" class="mono">0%</span></div>
             <input type="range" id="widthSlider" min="-100" max="100" value="0">
           </div>
           <div class="slider-row">
-            <div class="label-row"><span>ปลายจมูก (หยดน้ำ/เชิด)</span><span id="tipValLabel" class="mono">0%</span></div>
+            <div class="label-row"><span>ปลายจมูก (Tip Size)</span><span id="tipValLabel" class="mono">0%</span></div>
             <input type="range" id="tipSlider" min="-100" max="100" value="0">
           </div>
+          <div class="slider-row">
+            <div class="label-row"><span>องศาเชิด (Tip Rotation)</span><span id="rotationValLabel" class="mono">0%</span></div>
+            <input type="range" id="rotationSlider" min="-100" max="100" value="0">
+          </div>
+          <div class="slider-row">
+            <div class="label-row"><span>ความพุ่ง/แสงเงา (Projection)</span><span id="projectionValLabel" class="mono">0%</span></div>
+            <input type="range" id="projectionSlider" min="-100" max="100" value="0">
+          </div>
+
           <div class="tool-actions">
             <button class="btn btn-outline" id="aiModeBtn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
               AI Vision: OFF
             </button>
             <button class="btn btn-outline" id="compareBtn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-              กดค้างเทียบหน้าเดิม
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v18M16 3v18M3 8l-2 4 2 4M21 8l2 4-2 4"/></svg>
+              <span class="compare-btn-text">เปิดมุมมองคู่ ก่อน/หลัง</span>
             </button>
             <button class="btn primary" id="captureBtn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px; margin-right:4px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
@@ -300,7 +365,7 @@
   <section class="analysis" id="analysis">
     <div class="wrap">
       <div class="section-head">
-        <span class="eyebrow">วิเคราะห์โครงหน้า</span>
+        <span class="eyebrow">ขั้นตอนที่ 1 · วิเคราะห์โครงหน้า</span>
         <h2>โครงหน้าแบบคุณ เหมาะกับดั้งทรงไหน</h2>
         <p>ระบบคำนวณสัดส่วนใบหน้าจากจุดสังเกตเดียวกับที่ใช้ทำฟิลเตอร์ แล้วแนะนำแนวโน้มทรงดั้งที่เข้ากับโครงหน้าคุณ พร้อมคำนวณความสมมาตรของใบหน้า (Symmetry Score)</p>
       </div>
@@ -479,6 +544,31 @@
   
   const analysisStatus = document.getElementById('analysisStatus');
   const analysisPlaceholder = document.getElementById('analysisPlaceholder');
+  const analysisNudge = document.getElementById('analysisNudge');
+  const analysisNudgeMsg = document.getElementById('analysisNudgeMsg');
+  const analysisNudgeBtn = document.getElementById('analysisNudgeBtn');
+  let lastAnalysisInfo = null;
+
+  function applyRecommendedPreset(info){
+    if(!info) return;
+    bridgeSlider.value = info.preset[0] || 0;
+    humpSlider.value = info.preset[1] || 0;
+    alarSlider.value = info.preset[2] || 0;
+    widthSlider.value = info.preset[3] || 0;
+    tipSlider.value = info.preset[4] || 0;
+    rotationSlider.value = info.preset[5] || 0;
+    projectionSlider.value = info.preset[6] || 0;
+    onSliderChange();
+    window.scrollTo({ top: document.getElementById('tool').offsetTop - 20, behavior: 'smooth' });
+  }
+
+  analysisNudgeBtn.addEventListener('click', () => {
+    if(lastAnalysisInfo){
+      applyRecommendedPreset(lastAnalysisInfo);
+    } else {
+      document.getElementById('analysis').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
   const analysisResult = document.getElementById('analysisResult');
   const arShapeName = document.getElementById('arShapeName');
   const arShapeDesc = document.getElementById('arShapeDesc');
@@ -551,6 +641,51 @@
   canvas.width = CANVAS_W; canvas.height = CANVAS_H;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
+  // ---------- Before/After dual side-by-side compare ----------
+  const dualViewWrapper = document.getElementById('dualViewWrapper');
+  const beforeSideCanvas = document.getElementById('beforeSideCanvas');
+  const beforeSideCtx = beforeSideCanvas.getContext('2d');
+  beforeSideCanvas.width = CANVAS_W; beforeSideCanvas.height = CANVAS_H;
+
+  // The "after" side will use the main canvas appended into afterSideWrapper
+  const afterSideWrapper = document.getElementById('afterSideWrapper');
+
+  let compareMode = false;
+
+  function updateBeforeCanvas(){
+    if(!compareMode) return;
+    drawSourceToCanvas(beforeSideCtx);
+  }
+
+  function setCompareMode(on){
+    compareMode = on;
+    if(on){
+      // Show dual view, hide single view
+      dualViewWrapper.classList.add('active');
+      liveFrame.style.display = 'none';
+      // Move the main canvas into afterSideWrapper
+      if(!afterSideWrapper.contains(canvas)){
+        afterSideWrapper.appendChild(canvas);
+        canvas.style.cssText = 'width:100%; height:100%; display:block; object-fit:cover; position:absolute; top:0; left:0;';
+      }
+      updateBeforeCanvas();
+    } else {
+      // Restore single view
+      dualViewWrapper.classList.remove('active');
+      liveFrame.style.display = '';
+      // Move canvas back to liveFrame
+      if(!liveFrame.contains(canvas)){
+        liveFrame.insertBefore(canvas, liveFrame.firstChild);
+        canvas.style.cssText = 'width:100%; height:100%; display:block; object-fit:cover;';
+      }
+    }
+    if(compareBtn){
+      compareBtn.classList.toggle('active', on);
+      const btnText = compareBtn.querySelector('.compare-btn-text');
+      if(btnText) btnText.textContent = on ? 'ปิดมุมมองคู่' : 'เปิดมุมมองคู่ ก่อน/หลัง';
+    }
+  }
+
   const NOSE_IDX = [168,6,197,195,5,4,1,45,275,49,279,129,358,98,327,2];
   const RING_LEN = 339.3;
   const SMOOTHING_FACTOR = 0.5;
@@ -560,7 +695,6 @@
   let camera = null;
   let faceMesh = null;
   let latestLandmarks = null;
-  let isComparing = false;
   let isAiMode = false;
   let smoothedNose = null;
   
@@ -779,7 +913,7 @@
         smoothedNose = null;
       }
     } else if(state === 'filter'){
-      drawToCanvas(!isComparing);
+      drawToCanvas(true);
     }
   }
   
@@ -827,20 +961,21 @@
     }, 480);
   }
   
-  function drawSourceToCanvas() {
-    ctx.save();
+  function drawSourceToCanvas(targetCtx) {
+    targetCtx = targetCtx || ctx;
+    targetCtx.save();
     if(currentSourceType === 'video') {
-       ctx.scale(-1, 1);
-       ctx.drawImage(video, -CANVAS_W, 0, CANVAS_W, CANVAS_H);
+       targetCtx.scale(-1, 1);
+       targetCtx.drawImage(video, -CANVAS_W, 0, CANVAS_W, CANVAS_H);
     } else {
-       ctx.fillStyle = '#0c0f10';
-       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+       targetCtx.fillStyle = '#0c0f10';
+       targetCtx.fillRect(0, 0, CANVAS_W, CANVAS_H);
        const aspect = imgElement.width / imgElement.height;
        let dw = CANVAS_W, dh = CANVAS_W / aspect;
        if(dh < CANVAS_H) { dh = CANVAS_H; dw = CANVAS_H * aspect; }
-       ctx.drawImage(imgElement, (CANVAS_W-dw)/2, (CANVAS_H-dh)/2, dw, dh);
+       targetCtx.drawImage(imgElement, (CANVAS_W-dw)/2, (CANVAS_H-dh)/2, dw, dh);
     }
-    ctx.restore();
+    targetCtx.restore();
   }
   
   function getLmX(lm) {
@@ -849,6 +984,7 @@
 
   function drawToCanvas(applyFilter){
     drawSourceToCanvas();
+    updateBeforeCanvas();
 
     if(!applyFilter || !latestLandmarks) {
         smoothedNose = null;
@@ -856,15 +992,24 @@
         return;
     }
 
+    
     const bridge = parseInt(bridgeSlider.value,10)/100;
     const widthAdj = parseInt(widthSlider.value,10)/100;
-    const tipAdj = parseInt(tipSlider.value,10)/100; // -1 to 1
-    
+    const tipAdj = parseInt(tipSlider.value,10)/100;
+    const humpAdj = parseInt(humpSlider.value,10)/100;
+    const alarAdj = parseInt(alarSlider.value,10)/100;
+    const rotationAdj = parseInt(rotationSlider.value,10)/100;
+    const projAdj = parseInt(projectionSlider.value,10)/100;
+
     bridgeValLabel.textContent = Math.round(bridge*100)+'%';
     widthValLabel.textContent = Math.round(widthAdj*100)+'%';
     tipValLabel.textContent = Math.round(tipAdj*100)+'%';
-    
-    if(bridge === 0 && widthAdj === 0 && tipAdj === 0) {
+    humpValLabel.textContent = Math.round(humpAdj*100)+'%';
+    alarValLabel.textContent = Math.round(alarAdj*100)+'%';
+    rotationValLabel.textContent = Math.round(rotationAdj*100)+'%';
+    projectionValLabel.textContent = Math.round(projAdj*100)+'%';
+
+    if(bridge===0 && widthAdj===0 && tipAdj===0 && humpAdj===0 && alarAdj===0 && rotationAdj===0 && projAdj===0) {
       drawWireframe();
       return;
     }
@@ -895,8 +1040,8 @@
 
     const { cx, cy, rx, ry } = smoothedNose;
 
-    const x0 = Math.max(0, Math.floor(cx-rx)), x1 = Math.min(CANVAS_W, Math.ceil(cx+rx));
-    const y0 = Math.max(0, Math.floor(cy-ry)), y1 = Math.min(CANVAS_H, Math.ceil(cy+ry));
+    const x0 = Math.max(0, Math.floor(cx-rx*1.5)), x1 = Math.min(CANVAS_W, Math.ceil(cx+rx*1.5));
+    const y0 = Math.max(0, Math.floor(cy-ry*1.5)), y1 = Math.min(CANVAS_H, Math.ceil(cy+ry*1.5));
     if(x1<=x0 || y1<=y0) { drawWireframe(); return; }
 
     const src = ctx.getImageData(0,0,CANVAS_W,CANVAS_H);
@@ -905,35 +1050,81 @@
 
     const bulgeStrength = 1 - bridge*0.55;
     const pinchStrength = 1 + widthAdj*0.9;
-
+    
     for(let y=y0; y<y1; y++){
       for(let x=x0; x<x1; x++){
         const dx=(x-cx)/rx, dy=(y-cy)/ry;
         const r=Math.sqrt(dx*dx+dy*dy);
-        if(r>=1 || r===0) continue;
-        const rn=Math.pow(r,bulgeStrength);
-        const scale=rn/r;
-        let sdx=dx*scale, sdy=dy*scale;
+        if(r>=1.2 || r===0) continue; 
         
-        if(widthAdj!==0){
-          const rw=Math.pow(Math.abs(dx),pinchStrength)*Math.sign(dx);
-          sdx=sdx*0.5+rw*0.5;
-        }
+        let rn = Math.pow(r, bulgeStrength);
+        const scale = (r<1) ? (rn/r) : 1; 
         
-        // Nose Tip Lift Logic
-        let tipOffset = 0;
-        if(dy > 0 && tipAdj !== 0){
-          const weight = Math.sin(dy * Math.PI); // max at center of lower half
-          tipOffset = -tipAdj * weight * 0.45;
+        let sdx = dx * scale;
+        let sdy = dy * scale;
+        
+        // Bridge Width
+        if(widthAdj!==0 && dy < 0.2){
+          const rw = Math.pow(Math.abs(dx), pinchStrength) * Math.sign(dx);
+          sdx = sdx*0.5 + rw*0.5;
         }
 
-        const srcX=Math.round(cx+sdx*rx), srcY=Math.round(cy+(sdy+tipOffset)*ry);
+        // Hump / Slope Logic
+        if(humpAdj !== 0 && dy < -0.1 && dy > -0.8) {
+          const humpWeight = Math.sin((dy + 0.8) / 0.7 * Math.PI); 
+          sdx += humpWeight * humpAdj * 0.2 * Math.sign(dx);
+        }
+
+        // Alar / Nostril Width Logic
+        if(alarAdj !== 0 && dy > 0.2 && Math.abs(dx) > 0.3) {
+          const alarWeight = (dy - 0.2) / 0.8; 
+          sdx += alarAdj * alarWeight * 0.4 * Math.sign(dx);
+        }
+        
+        // Tip Lift & Rotation Logic
+        let tipOffset = 0;
+        if(dy > 0 && tipAdj !== 0){
+          const weight = Math.sin(dy * Math.PI); 
+          tipOffset = -tipAdj * weight * 0.45;
+        }
+        if(rotationAdj !== 0 && dy > -0.2) {
+          const rotWeight = (dy + 0.2) / 1.2;
+          tipOffset -= rotationAdj * rotWeight * 0.5; 
+          sdx -= rotationAdj * rotWeight * 0.1 * dx; 
+        }
+
+        const srcX = Math.round(cx + sdx*rx);
+        const srcY = Math.round(cy + (sdy+tipOffset)*ry);
         if(srcX<0||srcX>=CANVAS_W||srcY<0||srcY>=CANVAS_H) continue;
-        const di=(y*CANVAS_W+x)*4, si=(srcY*CANVAS_W+srcX)*4;
-        out.data[di]=src.data[si]; out.data[di+1]=src.data[si+1];
-        out.data[di+2]=src.data[si+2]; out.data[di+3]=src.data[si+3];
+        
+        const di = (y*CANVAS_W+x)*4;
+        const si = (srcY*CANVAS_W+srcX)*4;
+        
+        let r_col = src.data[si];
+        let g_col = src.data[si+1];
+        let b_col = src.data[si+2];
+
+        // Projection / Highlight Illusion
+        if(projAdj > 0 && Math.abs(dx) < 0.5) {
+           const centerDist = Math.abs(dx);
+           const hlWeight = Math.max(0, 1 - (centerDist * 2.5)) * Math.max(0, 1 - Math.abs(dy));
+           r_col = Math.min(255, r_col + 60 * projAdj * hlWeight);
+           g_col = Math.min(255, g_col + 60 * projAdj * hlWeight);
+           b_col = Math.min(255, b_col + 50 * projAdj * hlWeight);
+           
+           const shWeight = Math.max(0, Math.sin(centerDist * Math.PI)) * Math.max(0, 1 - Math.abs(dy));
+           r_col = Math.max(0, r_col - 30 * projAdj * shWeight);
+           g_col = Math.max(0, g_col - 30 * projAdj * shWeight);
+           b_col = Math.max(0, b_col - 30 * projAdj * shWeight);
+        }
+
+        out.data[di] = r_col;
+        out.data[di+1] = g_col;
+        out.data[di+2] = b_col;
+        out.data[di+3] = src.data[si+3];
       }
     }
+
     ctx.putImageData(out,0,0);
     drawWireframe();
   }
@@ -947,10 +1138,25 @@
     });
   }
   
+  
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+       const p = JSON.parse(e.target.dataset.preset);
+       bridgeSlider.value = p[0]; humpSlider.value = p[1]; alarSlider.value = p[2];
+       widthSlider.value = p[3]; tipSlider.value = p[4]; rotationSlider.value = p[5]; projectionSlider.value = p[6];
+       onSliderChange();
+    });
+  });
+
   const onSliderChange = () => { if(currentSourceType === 'image') drawToCanvas(true); };
   bridgeSlider.addEventListener('input', onSliderChange);
   widthSlider.addEventListener('input', onSliderChange);
   tipSlider.addEventListener('input', onSliderChange);
+  humpSlider.addEventListener('input', onSliderChange);
+  alarSlider.addEventListener('input', onSliderChange);
+  rotationSlider.addEventListener('input', onSliderChange);
+  projectionSlider.addEventListener('input', onSliderChange);
+
 
   startScanBtn.addEventListener('click', () => {
     startScanBtn.classList.add('hidden');
@@ -990,23 +1196,48 @@
   });
 
   captureBtn.addEventListener('click', () => {
-    const dataURL = canvas.toDataURL('image/jpeg', 0.9);
+    // Render a fresh, unfiltered "BEFORE" frame at the exact moment of capture
+    const tmpBefore = document.createElement('canvas');
+    tmpBefore.width = CANVAS_W; tmpBefore.height = CANVAS_H;
+    drawSourceToCanvas(tmpBefore.getContext('2d'));
+
+    const GAP = 6, LABEL_H = 36, WM_H = 22;
+    const combined = document.createElement('canvas');
+    combined.width = CANVAS_W * 2 + GAP;
+    combined.height = CANVAS_H + LABEL_H + WM_H;
+    const cctx = combined.getContext('2d');
+
+    cctx.fillStyle = '#0c0f10';
+    cctx.fillRect(0, 0, combined.width, combined.height);
+
+    cctx.drawImage(tmpBefore, 0, LABEL_H, CANVAS_W, CANVAS_H);
+    cctx.drawImage(canvas, CANVAS_W + GAP, LABEL_H, CANVAS_W, CANVAS_H);
+
+    cctx.fillStyle = '#c99a5b';
+    cctx.fillRect(CANVAS_W, LABEL_H, GAP, CANVAS_H);
+
+    cctx.textAlign = 'center';
+    cctx.fillStyle = '#e3c390';
+    cctx.font = 'bold 16px "IBM Plex Mono", monospace';
+    cctx.fillText('ก่อนปรับ · BEFORE', CANVAS_W / 2, 24);
+    cctx.fillText('หลังปรับ · AFTER', CANVAS_W + GAP + CANVAS_W / 2, 24);
+
+    cctx.textAlign = 'right';
+    cctx.font = '11px "IBM Plex Mono", monospace';
+    cctx.fillStyle = 'rgba(227,195,144,0.55)';
+    cctx.fillText('NoseSim · จำลองเพื่อการศึกษาเท่านั้น ไม่ใช่ผลลัพธ์ทางการแพทย์จริง', combined.width - 10, combined.height - 7);
+
+    const dataURL = combined.toDataURL('image/jpeg', 0.92);
     const link = document.createElement('a');
     link.href = dataURL;
-    link.download = `nosesim_capture_${Date.now()}.jpg`;
+    link.download = `nosesim_before_after_${Date.now()}.jpg`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   });
 
-  const startCompare = (e) => { e.preventDefault(); isComparing = true; if(currentSourceType === 'image') drawToCanvas(false); };
-  const stopCompare = (e) => { e.preventDefault(); isComparing = false; if(currentSourceType === 'image') drawToCanvas(true); };
-  compareBtn.addEventListener('mousedown', startCompare);
-  compareBtn.addEventListener('mouseup', stopCompare);
-  compareBtn.addEventListener('mouseleave', stopCompare);
-  compareBtn.addEventListener('touchstart', startCompare, {passive: false});
-  compareBtn.addEventListener('touchend', stopCompare);
-  
+  compareBtn.addEventListener('click', () => setCompareMode(!compareMode));
+
   aiModeBtn.addEventListener('click', () => {
     isAiMode = !isAiMode;
     aiModeBtn.classList.toggle('active', isAiMode);
@@ -1014,7 +1245,7 @@
       ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> AI Vision: ON'
       : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> AI Vision: OFF';
     aiHud.classList.toggle('hidden', !isAiMode);
-    if(currentSourceType === 'image') drawToCanvas(!isComparing);
+    if(currentSourceType === 'image') drawToCanvas(true);
   });
 
   function runAnalysis() {
@@ -1065,18 +1296,16 @@
     
     analysisPlaceholder.classList.add('hidden');
     analysisResult.classList.add('show');
+
+    // Remember this result and light up the "step 1 done" banner in the tool panel
+    lastAnalysisInfo = info;
+    analysisNudge.classList.add('done');
+    analysisNudge.querySelector('.analysis-nudge-text strong').textContent = `ขั้นตอนที่ 1 เสร็จแล้ว · ${info.name}`;
+    analysisNudgeMsg.textContent = `แนะนำทรงจมูก: ${info.rec} · ความสมมาตร ${Math.round(info.symmetryScore)}%`;
+    analysisNudgeBtn.textContent = '✨ ใช้ค่าที่แนะนำ';
     
-    // Auto Apply Button Logic
-    document.getElementById('autoApplyBtn').onclick = () => {
-      bridgeSlider.value = info.preset[0];
-      widthSlider.value = info.preset[1];
-      tipSlider.value = info.preset[2];
-      bridgeValLabel.textContent = info.preset[0] + '%';
-      widthValLabel.textContent = info.preset[1] + '%';
-      tipValLabel.textContent = info.preset[2] + '%';
-      onSliderChange(); // force redraw if on image
-      window.scrollTo({ top: document.getElementById('tool').offsetTop - 20, behavior: 'smooth' });
-    };
+    // Auto Apply Button Logic (in the analysis card itself)
+    document.getElementById('autoApplyBtn').onclick = () => applyRecommendedPreset(info);
 
     // Small delay to trigger CSS transition for the progress bar
     setTimeout(() => { symBar.style.width = score + '%'; }, 50);

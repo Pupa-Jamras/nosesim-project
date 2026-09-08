@@ -1447,7 +1447,7 @@
     tGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     tGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    const tMaterial = new THREE.PointsMaterial({ size: 4, sizeAttenuation: false, color: 0x00FF00 });
+    const tMaterial = new THREE.PointsMaterial({ size: 10, sizeAttenuation: false, color: 0x00FF00 });
     tParticles = new THREE.Points(tGeometry, tMaterial);
     tParticles.frustumCulled = false;
     tScene.add(tParticles);
@@ -1460,7 +1460,7 @@
     if(!threeModal.classList.contains('hidden')) {
       requestAnimationFrame(animateThree);
       const w = threeContainer.clientWidth || window.innerWidth; const h = threeContainer.clientHeight || window.innerHeight;
-      if(w > 0 && h > 0 && (tRenderer.domElement.width !== w || tRenderer.domElement.height !== h)) { tRenderer.setSize(w, h, false); tCamera.aspect = w / h; tCamera.updateProjectionMatrix(); }
+      if(w > 0 && h > 0 && (tRenderer.domElement.width !== w || tRenderer.domElement.height !== h)) { tRenderer.setSize(w, h); tCamera.aspect = w / h; tCamera.updateProjectionMatrix(); }
       tControls.update();
       updateThreePointCloud();
       tRenderer.render(tScene, tCamera);
@@ -1524,6 +1524,8 @@
 </script>
 </body>
 </html>
+
+
 
 
 

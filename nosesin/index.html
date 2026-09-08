@@ -1477,7 +1477,9 @@ function renderPointCloud() {
             const tipAdj = parseInt(tipSlider.value,10)/100 || 0;
             
             pcCtx.fillStyle = '#00FF00';
-                                                                                  const cx = w/2; const cy = h/2;
+                                                                                                if(isNaN(yaw)) yaw = 0;
+              if(isNaN(pitch)) pitch = 0;
+              const cx = w/2; const cy = h/2;
               const scale = Math.min(w, h) * 0.45;
 
               // Generate procedural mesh topology once
@@ -1536,6 +1538,10 @@ function renderPointCloud() {
                   points2d.push({x: px, y: py, z: z2});
               }
 
+                            // TEST RECTANGLE
+              pcCtx.fillStyle = 'blue';
+              pcCtx.fillRect(100, 100, 300, 300);
+              
               // Draw Procedural Wireframe Mesh
               if(window.meshPairs) {
                   pcCtx.strokeStyle = 'rgba(0, 255, 150, 0.4)'; // Cybernetic glowing green
@@ -1547,7 +1553,7 @@ function renderPointCloud() {
                       if(p1 && p2 && !isNaN(p1.x) && !isNaN(p1.y) && !isNaN(p2.x) && !isNaN(p2.y)) {
                           pcCtx.moveTo(p1.x, p1.y);
                           pcCtx.lineTo(p2.x, p2.y);
-                          pointsDrawn++;
+                          
                       }
                   });
                   pcCtx.stroke();
@@ -1561,9 +1567,7 @@ function renderPointCloud() {
                           pcCtx.fill();
                       }
                   });
-              }if(pointsDrawn === 0) {
-               pcCtx.fillStyle = 'yellow'; pcCtx.font='20px Arial'; pcCtx.fillText('ERROR DRAWING POINTS', w/2, h/2);
-            }
+              }
         }
     }
     requestAnimationFrame(renderPointCloud);
@@ -1585,6 +1589,9 @@ if(closeThreeBtn){
 </script>
 </body>
 </html>
+
+
+
 
 
 

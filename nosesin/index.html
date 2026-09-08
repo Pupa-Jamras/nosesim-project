@@ -194,6 +194,7 @@
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/delaunator@5.0.0/delaunator.min.js"></script>
 </head>
 <body>
 
@@ -1516,21 +1517,33 @@ function renderPointCloud() {
                   avgX = sx / 468; avgY = sy / 468;
               }
 
-              // 1. GENERATE PROCEDURAL TRIANGLES
-              if(!window.meshTriangles && window.latestLandmarks && window.latestLandmarks.length === 468) {
-                  window.meshTriangles = [];
-                  const pts = window.latestLandmarks;
+                            // 1. GENERATE PROCEDURAL TRIANGLES USING DELAUNATOR
+              if(!window.meshTriangles && window.latestLandmarks && window.latestLandmarks.length === 468 && window.Delaunator) {
+                  const coords = [];
                   for(let i=0; i<468; i++) {
-                      let dists = [];
-                      for(let j=0; j<468; j++) {
-                          if(i===j) continue;
-                          let dx = pts[i].x - pts[j].x;
-                          let dy = pts[i].y - pts[j].y;
-                          dists.push({idx: j, d: dx*dx + dy*dy});
+                      // Project 3D landmarks to 2D for Delaunay triangulation
+                      coords.push(window.latestLandmarks[i].x, window.latestLandmarks[i].y);
+                  }
+                  const delaunay = new window.Delaunator(coords);
+                  window.meshTriangles = [];
+                  for (let i = 0; i < delaunay.triangles.length; i += 3) {
+                      // Exclude triangles that are too large (e.g. connecting ears across the background)
+                      const p1 = window.latestLandmarks[delaunay.triangles[i]];
+                      const p2 = window.latestLandmarks[delaunay.triangles[i+1]];
+                      const p3 = window.latestLandmarks[delaunay.triangles[i+2]];
+                      
+                      const d12 = Math.hypot(p1.x-p2.x, p1.y-p2.y);
+                      const d23 = Math.hypot(p2.x-p3.x, p2.y-p3.y);
+                      const d31 = Math.hypot(p3.x-p1.x, p3.y-p1.y);
+                      
+                      // Max edge length filter to avoid background triangles
+                      if(d12 < 0.15 && d23 < 0.15 && d31 < 0.15) {
+                          window.meshTriangles.push([
+                              delaunay.triangles[i],
+                              delaunay.triangles[i+1],
+                              delaunay.triangles[i+2]
+                          ]);
                       }
-                      dists.sort((a,b) => a.d - b.d);
-                      window.meshTriangles.push([i, dists[0].idx, dists[1].idx]);
-                      window.meshTriangles.push([i, dists[1].idx, dists[2].idx]);
                   }
               }
 
@@ -1639,6 +1652,9 @@ if(closeThreeBtn){
 </script>
 </body>
 </html>
+
+
+
 
 
 

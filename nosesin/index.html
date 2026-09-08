@@ -205,7 +205,7 @@
     <div style="font-size:12px; color:#c99a5b; margin-top:5px;">X, Y, Z Depth Estimation</div>
   </div>
   <button id="closeThreeBtn" style="position:absolute; top:20px; right:20px; background:none; border:none; color:#fff; cursor:pointer;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-  <div id="threeContainer" style="width:100%; height:100%;"></div>
+  <div id="threeContainer" style="position:absolute; inset:0; z-index:1;"></div>
   <div style="position:absolute; bottom:30px; display:flex; gap:20px;">
     <div style="background:rgba(20,24,26,0.8); padding:10px 20px; border-radius:20px; border:1px solid #c99a5b; color:#f2ece2; font-size:14px;">คลิกและลากเพื่อหมุน (Drag to rotate)</div>
   </div>
@@ -1452,6 +1452,7 @@
     tParticles.frustumCulled = false;
     tScene.add(tParticles);
     
+    
     threeInit = true;
   }
 
@@ -1494,16 +1495,7 @@
       positions[i*3+1] = py;
       positions[i*3+2] = pz;
 
-      const cx = Math.floor(lm.x * CANVAS_W);
-      const cy = Math.floor(lm.y * CANVAS_H);
-      const idx = (cy * CANVAS_W + cx) * 4;
-      if(idx >= 0 && idx < imgData.length) {
-         colors[i*3] = imgData[idx] / 255;
-         colors[i*3+1] = imgData[idx+1] / 255;
-         colors[i*3+2] = imgData[idx+2] / 255;
-      } else {
-         colors[i*3] = 0.5; colors[i*3+1]=0.8; colors[i*3+2]=0.5;
-      }
+      
     }
     tGeometry.attributes.position.needsUpdate = true;
     tGeometry.attributes.color.needsUpdate = true;
@@ -1532,6 +1524,10 @@
 </script>
 </body>
 </html>
+
+
+
+
 
 
 

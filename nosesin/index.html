@@ -1418,112 +1418,122 @@
   
 })();
 
-    /* ---------- CUSTOM 3D VIEWER LOGIC ---------- */
-  const threeBtn = document.getElementById('threeBtn');
-  const threeModal = document.getElementById('threeModal');
-  const closeThreeBtn = document.getElementById('closeThreeBtn');
-  const threeContainer = document.getElementById('threeContainer');
-  
-  let pointCloudCanvas = document.createElement('canvas');
-  pointCloudCanvas.style.position = 'absolute';
-  pointCloudCanvas.style.top = '0'; pointCloudCanvas.style.left = '0';
-  pointCloudCanvas.style.width = '100%';
-  pointCloudCanvas.style.height = '100%';
-  pointCloudCanvas.style.zIndex = '1';
-  threeContainer.appendChild(pointCloudCanvas);
-  const pcCtx = pointCloudCanvas.getContext('2d');
-  
-  let yaw = 0; let pitch = 0;
-  let isDragging = false; let lastX=0, lastY=0;
-  
-  threeModal.addEventListener('mousedown', (e) => { isDragging=true; lastX=e.clientX; lastY=e.clientY; });
-  threeModal.addEventListener('mousemove', (e) => {
-      if(!isDragging) return;
-      yaw += (e.clientX - lastX) * 0.01;
-      pitch += (e.clientY - lastY) * 0.01;
-      lastX=e.clientX; lastY=e.clientY;
+    
+/* ---------- CUSTOM 3D VIEWER LOGIC ---------- */
+const threeBtn = document.getElementById('threeBtn');
+const threeModal = document.getElementById('threeModal');
+const closeThreeBtn = document.getElementById('closeThreeBtn');
+const threeContainer = document.getElementById('threeContainer');
+
+let pointCloudCanvas = document.createElement('canvas');
+pointCloudCanvas.style.position = 'absolute';
+pointCloudCanvas.style.top = '0';
+pointCloudCanvas.style.left = '0';
+pointCloudCanvas.style.width = '100%';
+pointCloudCanvas.style.height = '100%';
+pointCloudCanvas.style.zIndex = '1';
+threeContainer.appendChild(pointCloudCanvas);
+const pcCtx = pointCloudCanvas.getContext('2d');
+
+let yaw = 0; let pitch = 0;
+let isDragging = false; let lastX=0, lastY=0;
+
+threeModal.addEventListener('mousedown', (e) => { isDragging=true; lastX=e.clientX; lastY=e.clientY; });
+threeModal.addEventListener('mousemove', (e) => {
+    if(!isDragging) return;
+    yaw += (e.clientX - lastX) * 0.01;
+    pitch += (e.clientY - lastY) * 0.01;
+    lastX=e.clientX; lastY=e.clientY;
+});
+threeModal.addEventListener('mouseup', () => { isDragging=false; });
+threeModal.addEventListener('mouseleave', () => { isDragging=false; });
+
+threeModal.addEventListener('touchstart', (e) => { isDragging=true; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; });
+threeModal.addEventListener('touchmove', (e) => {
+    if(!isDragging) return;
+    yaw += (e.touches[0].clientX - lastX) * 0.01;
+    pitch += (e.touches[0].clientY - lastY) * 0.01;
+    lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
+});
+threeModal.addEventListener('touchend', () => { isDragging=false; });
+
+function renderPointCloud() {
+    if(!threeModal.classList.contains('hidden')) {
+        const w = threeContainer.clientWidth || window.innerWidth;
+        const h = threeContainer.clientHeight || window.innerHeight;
+        pointCloudCanvas.width = w; pointCloudCanvas.height = h;
+        
+        pcCtx.clearRect(0, 0, w, h);
+        
+        if(!latestLandmarks) {
+            pcCtx.fillStyle = '#ff4444';
+            pcCtx.beginPath(); pcCtx.arc(w/2, h/2 - 50, 40, 0, 2*Math.PI); pcCtx.fill();
+            pcCtx.fillStyle = 'white'; pcCtx.font = '24px Arial'; pcCtx.textAlign = 'center';
+            pcCtx.fillText('AI VISION OFF - NO FACE DATA', w/2, h/2 + 30);
+            pcCtx.font = '16px Arial'; pcCtx.fillStyle = '#aaa';
+            pcCtx.fillText('Please turn on AI Vision or make sure your face is visible', w/2, h/2 + 60);
+        } else {
+            const bridge = parseInt(bridgeSlider.value,10)/100 || 0;
+            const tipAdj = parseInt(tipSlider.value,10)/100 || 0;
+            
+            pcCtx.fillStyle = '#00FF00';
+            const cx = w/2; const cy = h/2;
+            const scale = Math.min(w, h) * 0.4;
+            
+            let pointsDrawn = 0;
+            for(let i=0; i<468; i++) {
+                const lm = latestLandmarks[i];
+                if(!lm) continue;
+                
+                let x = (lm.x - 0.5);
+                let y = (lm.y - 0.5);
+                let z = -(lm.z || 0);
+                
+                if(NOSE_IDX.includes(i)) {
+                   z += bridge * 0.2;
+                   if(i===4 || i===1) z += tipAdj * 0.3;
+                }
+                
+                let x1 = x * Math.cos(yaw) - z * Math.sin(yaw);
+                let z1 = z * Math.cos(yaw) + x * Math.sin(yaw);
+                
+                let y1 = y * Math.cos(pitch) - z1 * Math.sin(pitch);
+                let z2 = z1 * Math.cos(pitch) + y * Math.sin(pitch);
+                
+                const fov = 2.0;
+                const projScale = fov / (fov + z2);
+                
+                const px = cx + (x1 * scale * projScale);
+                const py = cy + (y1 * scale * projScale);
+                
+                if(!isNaN(px) && !isNaN(py)) {
+                    pcCtx.beginPath();
+                    pcCtx.arc(px, py, 4, 0, 2*Math.PI);
+                    pcCtx.fill();
+                    pointsDrawn++;
+                }
+            }
+            if(pointsDrawn === 0) {
+               pcCtx.fillStyle = 'yellow'; pcCtx.font='20px Arial'; pcCtx.fillText('ERROR DRAWING POINTS', w/2, h/2);
+            }
+        }
+    }
+    requestAnimationFrame(renderPointCloud);
+}
+
+requestAnimationFrame(renderPointCloud);
+
+if(threeBtn){
+  threeBtn.addEventListener('click', () => {
+    threeModal.classList.remove('hidden');
   });
-  threeModal.addEventListener('mouseup', () => { isDragging=false; });
-  threeModal.addEventListener('mouseleave', () => { isDragging=false; });
+}
 
-  threeModal.addEventListener('touchstart', (e) => { isDragging=true; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; });
-  threeModal.addEventListener('touchmove', (e) => {
-      if(!isDragging) return;
-      yaw += (e.touches[0].clientX - lastX) * 0.01;
-      pitch += (e.touches[0].clientY - lastY) * 0.01;
-      lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
+if(closeThreeBtn){
+  closeThreeBtn.addEventListener('click', () => {
+    threeModal.classList.add('hidden');
   });
-  threeModal.addEventListener('touchend', () => { isDragging=false; });
-
-  function renderPointCloud() {
-      if(!threeModal.classList.contains('hidden')) {
-          const w = threeContainer.clientWidth || window.innerWidth;
-          const h = threeContainer.clientHeight || window.innerHeight;
-          pointCloudCanvas.width = w; pointCloudCanvas.height = h;
-          
-          pcCtx.clearRect(0, 0, w, h);
-          if(!latestLandmarks) { pcCtx.font='24px Noto Sans Thai, sans-serif'; pcCtx.fillStyle='#c99a5b'; pcCtx.textAlign='center'; pcCtx.fillText('????????????????????? 3D... ?????????????', w/2, h/2); }
-          pcCtx.font = '50px Arial'; pcCtx.fillStyle = 'white'; pcCtx.fillText(latestLandmarks ? 'YES ' + latestLandmarks.length : 'NO LANDMARKS', w/2 - 100, h/2);
-          
-          if(latestLandmarks) { try {
-              const bridge = parseInt(bridgeSlider.value,10)/100 || 0;
-              const tipAdj = parseInt(tipSlider.value,10)/100 || 0;
-              
-              pcCtx.fillStyle = '#00FF00';
-              
-              const cx = w/2; const cy = h/2;
-              const scale = Math.min(w, h) * 0.4;
-              
-              for(let i=0; i<468; i++) {
-                  const lm = latestLandmarks[i];
-                  if(!lm) continue;
-                  
-                  let x = (lm.x - 0.5);
-                  let y = (lm.y - 0.5);
-                  let z = -(lm.z || 0);
-                  
-                  if(NOSE_IDX.includes(i)) {
-                     z += bridge * 0.2;
-                     if(i===4 || i===1) z += tipAdj * 0.3;
-                  }
-                  
-                  let x1 = x * Math.cos(yaw) - z * Math.sin(yaw);
-                  let z1 = z * Math.cos(yaw) + x * Math.sin(yaw);
-                  
-                  let y1 = y * Math.cos(pitch) - z1 * Math.sin(pitch);
-                  let z2 = z1 * Math.cos(pitch) + y * Math.sin(pitch);
-                  
-                  const fov = 2.0;
-                  const projScale = fov / (fov + z2);
-                  
-                  const px = cx + (x1 * scale * projScale);
-                  const py = cy + (y1 * scale * projScale);
-                  
-                  pcCtx.beginPath();
-                  pcCtx.arc(px, py, 5 * projScale, 0, 2*Math.PI);
-                  pcCtx.fill(); } } catch(err) { pcCtx.font='20px Arial'; pcCtx.fillStyle='red'; pcCtx.fillText(err.stack || err.message, 50, 50); } }
-      }
-      requestAnimationFrame(renderPointCloud);
-  }
-  
-  requestAnimationFrame(renderPointCloud);
-
-  if(threeBtn){
-    threeBtn.addEventListener('click', () => {
-      threeModal.classList.remove('hidden');
-    });
-  }
-
-  if(closeThreeBtn){
-    closeThreeBtn.addEventListener('click', () => {
-      threeModal.classList.add('hidden');
-    });
-  }
+}
 </script>
 </body>
-
-
-
-
-
-
+</html>

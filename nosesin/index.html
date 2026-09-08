@@ -191,8 +191,25 @@
   footer .brand{font-size:15px;}
   footer p{font-size:13px; color:var(--muted);}
 </style>
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
+
+
+<!-- 3D Viewer Modal -->
+<div id="threeModal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:300; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+  <div style="position:absolute; top:20px; left:20px; color:#6fae8a; font-family:'IBM Plex Mono',monospace;">
+    <div>[ 3D POINT CLOUD RENDER ]</div>
+    <div style="font-size:12px; color:#c99a5b; margin-top:5px;">X, Y, Z Depth Estimation</div>
+  </div>
+  <button id="closeThreeBtn" style="position:absolute; top:20px; right:20px; background:none; border:none; color:#fff; cursor:pointer;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div id="threeContainer" style="width:100%; height:100%;"></div>
+  <div style="position:absolute; bottom:30px; display:flex; gap:20px;">
+    <div style="background:rgba(20,24,26,0.8); padding:10px 20px; border-radius:20px; border:1px solid #c99a5b; color:#f2ece2; font-size:14px;">??????????????????? (Drag to rotate)</div>
+  </div>
+</div>
 
 <video id="video" autoplay playsinline muted class="hidden"></video>
 
@@ -345,6 +362,10 @@
             <button class="btn btn-outline" id="aiModeBtn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
               AI Vision: OFF
+            </button>
+            <button class="btn btn-outline" id="threeBtn" style="border-color:#6fae8a; color:#6fae8a;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+              <span>?????????? 3D</span>
             </button>
             <button class="btn btn-outline" id="compareBtn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v18M16 3v18M3 8l-2 4 2 4M21 8l2 4-2 4"/></svg>
@@ -1396,7 +1417,116 @@
   });
   
 })();
-</script>
 
+  /* ---------- THREE.JS 3D VIEWER LOGIC ---------- */
+  const threeBtn = document.getElementById('threeBtn');
+  const threeModal = document.getElementById('threeModal');
+  const closeThreeBtn = document.getElementById('closeThreeBtn');
+  const threeContainer = document.getElementById('threeContainer');
+  let threeInit = false;
+  let tScene, tCamera, tRenderer, tControls, tGeometry, tParticles;
+
+  function initThree() {
+    if(threeInit) return;
+    tScene = new THREE.Scene();
+    tCamera = new THREE.PerspectiveCamera(45, threeContainer.clientWidth/threeContainer.clientHeight, 0.1, 1000);
+    tCamera.position.z = 2.5;
+
+    tRenderer = new THREE.WebGLRenderer({alpha:true, antialias:true});
+    tRenderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+    tRenderer.setPixelRatio(window.devicePixelRatio);
+    threeContainer.appendChild(tRenderer.domElement);
+
+    tControls = new THREE.OrbitControls(tCamera, tRenderer.domElement);
+    tControls.enableDamping = true;
+    tControls.dampingFactor = 0.05;
+
+    tGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(468 * 3);
+    const colors = new Float32Array(468 * 3);
+    tGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    tGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const tMaterial = new THREE.PointsMaterial({ size: 0.02, vertexColors: true, transparent:true, opacity: 0.9 });
+    tParticles = new THREE.Points(tGeometry, tMaterial);
+    tScene.add(tParticles);
+    
+    threeInit = true;
+  }
+
+  function animateThree() {
+    if(!threeModal.classList.contains('hidden')) {
+      requestAnimationFrame(animateThree);
+      tControls.update();
+      tRenderer.render(tScene, tCamera);
+    }
+  }
+
+  function updateThreePointCloud() {
+    if(!latestLandmarks) return;
+    
+    const imgData = ctx.getImageData(0, 0, CANVAS_W, CANVAS_H).data;
+    const positions = tGeometry.attributes.position.array;
+    const colors = tGeometry.attributes.color.array;
+
+    const bridge = parseInt(bridgeSlider.value,10)/100;
+    const widthAdj = parseInt(widthSlider.value,10)/100;
+    const tipAdj = parseInt(tipSlider.value,10)/100;
+
+    for(let i=0; i<468; i++) {
+      const lm = latestLandmarks[i];
+      let px = (lm.x - 0.5) * 2.5;
+      let py = -(lm.y - 0.5) * 2.5;
+      let pz = -lm.z * 2.5; 
+
+      if(NOSE_IDX.includes(i)) {
+         pz += bridge * 0.3; 
+         if(i===4 || i===1) pz += tipAdj * 0.4; 
+         if(i===279) px += widthAdj * 0.15;
+         if(i===49) px -= widthAdj * 0.15;
+      }
+
+      positions[i*3] = px;
+      positions[i*3+1] = py;
+      positions[i*3+2] = pz;
+
+      const cx = Math.floor(lm.x * CANVAS_W);
+      const cy = Math.floor(lm.y * CANVAS_H);
+      const idx = (cy * CANVAS_W + cx) * 4;
+      if(idx >= 0 && idx < imgData.length) {
+         colors[i*3] = imgData[idx] / 255;
+         colors[i*3+1] = imgData[idx+1] / 255;
+         colors[i*3+2] = imgData[idx+2] / 255;
+      } else {
+         colors[i*3] = 0.5; colors[i*3+1]=0.8; colors[i*3+2]=0.5;
+      }
+    }
+    tGeometry.attributes.position.needsUpdate = true;
+    tGeometry.attributes.color.needsUpdate = true;
+  }
+
+  if(threeBtn){
+    threeBtn.addEventListener('click', () => {
+      threeModal.classList.remove('hidden');
+      initThree();
+      updateThreePointCloud();
+      animateThree();
+    });
+  }
+
+  if(closeThreeBtn){
+    closeThreeBtn.addEventListener('click', () => {
+      threeModal.classList.add('hidden');
+    });
+  }
+
+  bridgeSlider.addEventListener('input', () => { if(!threeModal.classList.contains('hidden')) updateThreePointCloud(); });
+  widthSlider.addEventListener('input', () => { if(!threeModal.classList.contains('hidden')) updateThreePointCloud(); });
+  tipSlider.addEventListener('input', () => { if(!threeModal.classList.contains('hidden')) updateThreePointCloud(); });
+</script>
+</script>
 </body>
 </html>
+
+
+

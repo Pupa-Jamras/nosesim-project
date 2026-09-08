@@ -1418,96 +1418,99 @@
   
 })();
 
-  /* ---------- THREE.JS 3D VIEWER LOGIC ---------- */
+    /* ---------- CUSTOM 3D VIEWER LOGIC ---------- */
   const threeBtn = document.getElementById('threeBtn');
   const threeModal = document.getElementById('threeModal');
   const closeThreeBtn = document.getElementById('closeThreeBtn');
   const threeContainer = document.getElementById('threeContainer');
-  let threeInit = false;
-  let tScene, tCamera, tRenderer, tControls, tGeometry, tParticles;
+  
+  let pointCloudCanvas = document.createElement('canvas');
+  pointCloudCanvas.style.position = 'absolute';
+  pointCloudCanvas.style.inset = '0';
+  pointCloudCanvas.style.width = '100%';
+  pointCloudCanvas.style.height = '100%';
+  pointCloudCanvas.style.zIndex = '1';
+  threeContainer.appendChild(pointCloudCanvas);
+  const pcCtx = pointCloudCanvas.getContext('2d');
+  
+  let yaw = 0; let pitch = 0;
+  let isDragging = false; let lastX=0, lastY=0;
+  
+  threeModal.addEventListener('mousedown', (e) => { isDragging=true; lastX=e.clientX; lastY=e.clientY; });
+  threeModal.addEventListener('mousemove', (e) => {
+      if(!isDragging) return;
+      yaw += (e.clientX - lastX) * 0.01;
+      pitch += (e.clientY - lastY) * 0.01;
+      lastX=e.clientX; lastY=e.clientY;
+  });
+  threeModal.addEventListener('mouseup', () => { isDragging=false; });
+  threeModal.addEventListener('mouseleave', () => { isDragging=false; });
 
-  function initThree() {
-    if(threeInit) return;
-    tScene = new THREE.Scene();
-    tCamera = new THREE.PerspectiveCamera(45, threeContainer.clientWidth/threeContainer.clientHeight, 0.1, 1000);
-    tCamera.position.z = 2.5;
+  threeModal.addEventListener('touchstart', (e) => { isDragging=true; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; });
+  threeModal.addEventListener('touchmove', (e) => {
+      if(!isDragging) return;
+      yaw += (e.touches[0].clientX - lastX) * 0.01;
+      pitch += (e.touches[0].clientY - lastY) * 0.01;
+      lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
+  });
+  threeModal.addEventListener('touchend', () => { isDragging=false; });
 
-    tRenderer = new THREE.WebGLRenderer({alpha:true, antialias:true});
-    tRenderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
-    tRenderer.setPixelRatio(window.devicePixelRatio);
-    threeContainer.appendChild(tRenderer.domElement);
-
-    tControls = new THREE.OrbitControls(tCamera, tRenderer.domElement);
-    tControls.enableDamping = true;
-    tControls.dampingFactor = 0.05;
-
-    tGeometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(468 * 3);
-    const colors = new Float32Array(468 * 3);
-    tGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    tGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-    const tMaterial = new THREE.PointsMaterial({ size: 10, sizeAttenuation: false, color: 0x00FF00 });
-    tParticles = new THREE.Points(tGeometry, tMaterial);
-    tParticles.frustumCulled = false;
-    tScene.add(tParticles);
-    
-    
-    threeInit = true;
-  }
-
-  function animateThree() {
-    if(!threeModal.classList.contains('hidden')) {
-      requestAnimationFrame(animateThree);
-      const w = threeContainer.clientWidth || window.innerWidth; const h = threeContainer.clientHeight || window.innerHeight;
-      if(w > 0 && h > 0 && (tRenderer.domElement.width !== w || tRenderer.domElement.height !== h)) { tRenderer.setSize(w, h); tCamera.aspect = w / h; tCamera.updateProjectionMatrix(); }
-      tControls.update();
-      updateThreePointCloud();
-      tRenderer.render(tScene, tCamera);
-    }
-  }
-
-  function updateThreePointCloud() {
-    if(!latestLandmarks) return;
-    
-    let imgData; try { imgData = ctx.getImageData(0, 0, CANVAS_W, CANVAS_H).data; } catch(e) { imgData = new Uint8ClampedArray(CANVAS_W * CANVAS_H * 4); }
-    const positions = tGeometry.attributes.position.array;
-    const colors = tGeometry.attributes.color.array;
-
-    const bridge = parseInt(bridgeSlider.value,10)/100;
-    const widthAdj = parseInt(widthSlider.value,10)/100;
-    const tipAdj = parseInt(tipSlider.value,10)/100;
-
-    for(let i=0; i<468; i++) {
-      const lm = latestLandmarks[i];
-      let px = (lm.x - 0.5) * 2.5;
-      let py = -(lm.y - 0.5) * 2.5;
-      let pz = -lm.z * 2.5; 
-
-      if(NOSE_IDX.includes(i)) {
-         pz += bridge * 0.3; 
-         if(i===4 || i===1) pz += tipAdj * 0.4; 
-         if(i===279) px += widthAdj * 0.15;
-         if(i===49) px -= widthAdj * 0.15;
+  function renderPointCloud() {
+      if(!threeModal.classList.contains('hidden')) {
+          const w = threeContainer.clientWidth || window.innerWidth;
+          const h = threeContainer.clientHeight || window.innerHeight;
+          pointCloudCanvas.width = w; pointCloudCanvas.height = h;
+          
+          pcCtx.clearRect(0, 0, w, h);
+          
+          if(latestLandmarks) {
+              const bridge = parseInt(bridgeSlider.value,10)/100 || 0;
+              const tipAdj = parseInt(tipSlider.value,10)/100 || 0;
+              
+              pcCtx.fillStyle = '#00FF00';
+              
+              const cx = w/2; const cy = h/2;
+              const scale = Math.min(w, h) * 0.8;
+              
+              for(let i=0; i<468; i++) {
+                  const lm = latestLandmarks[i];
+                  if(!lm) continue;
+                  
+                  let x = (lm.x - 0.5);
+                  let y = (lm.y - 0.5);
+                  let z = -(lm.z || 0);
+                  
+                  if(NOSE_IDX.includes(i)) {
+                     z += bridge * 0.2;
+                     if(i===4 || i===1) z += tipAdj * 0.3;
+                  }
+                  
+                  let x1 = x * Math.cos(yaw) - z * Math.sin(yaw);
+                  let z1 = z * Math.cos(yaw) + x * Math.sin(yaw);
+                  
+                  let y1 = y * Math.cos(pitch) - z1 * Math.sin(pitch);
+                  let z2 = z1 * Math.cos(pitch) + y * Math.sin(pitch);
+                  
+                  const fov = 2.0;
+                  const projScale = fov / (fov + z2);
+                  
+                  const px = cx + (x1 * scale * projScale);
+                  const py = cy + (y1 * scale * projScale);
+                  
+                  pcCtx.beginPath();
+                  pcCtx.arc(px, py, 3 * projScale, 0, 2*Math.PI);
+                  pcCtx.fill();
+              }
+          }
       }
-
-      positions[i*3] = px;
-      positions[i*3+1] = py;
-      positions[i*3+2] = pz;
-
-      
-    }
-    tGeometry.attributes.position.needsUpdate = true;
-    tGeometry.attributes.color.needsUpdate = true;
+      requestAnimationFrame(renderPointCloud);
   }
+  
+  requestAnimationFrame(renderPointCloud);
 
   if(threeBtn){
     threeBtn.addEventListener('click', () => {
       threeModal.classList.remove('hidden');
-      threeModal.getBoundingClientRect(); // Force reflow
-      try { initThree(); } catch(e) { document.getElementById('threeContainer').innerHTML = '<h1 style="color:red">' + e.message + '</h1>'; }
-      updateThreePointCloud();
-      animateThree();
     });
   }
 
@@ -1516,29 +1519,5 @@
       threeModal.classList.add('hidden');
     });
   }
-
-  bridgeSlider.addEventListener('input', () => { if(!threeModal.classList.contains('hidden')) updateThreePointCloud(); });
-  widthSlider.addEventListener('input', () => { if(!threeModal.classList.contains('hidden')) updateThreePointCloud(); });
-  tipSlider.addEventListener('input', () => { if(!threeModal.classList.contains('hidden')) updateThreePointCloud(); });
-</script>
 </script>
 </body>
-</html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

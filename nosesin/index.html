@@ -26,7 +26,7 @@
 
   /* ---------- login screen ---------- */
   #loginScreen{
-    position:fixed; inset:0; z-index:200; background:radial-gradient(circle at 50% 20%, #1c2224, #101415 70%);
+    position:fixed; top:0; left:0; width:100%; height:100%; z-index:200; background:radial-gradient(circle at 50% 20%, #1c2224, #101415 70%);
     display:flex; align-items:center; justify-content:center; padding:24px; transition:opacity .5s ease;
   }
   .login-card{width:100%; max-width:400px; text-align:center;}
@@ -40,18 +40,18 @@
     border-radius:50%; overflow:hidden; background:#0c0f10; border:1px solid var(--line);
   }
   .scan-frame canvas{width:100%; height:100%; object-fit:cover; display:block;}
-  .scan-ring{position:absolute; inset:0; width:240px; height:240px; transform:rotate(-90deg);}
+  .scan-ring{position:absolute; top:0; left:0; width:100%; height:100%; width:240px; height:240px; transform:rotate(-90deg);}
   .scan-ring circle{fill:none; stroke-width:3;}
   .scan-ring .bg{stroke:rgba(255,255,255,0.08);}
   .scan-ring .fg{stroke:var(--bronze); stroke-linecap:round; transition:stroke-dashoffset .1s linear;}
   .scan-check{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    position:absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center;
     background:rgba(20,24,26,0.55); opacity:0; transition:opacity .3s;
   }
   .scan-check.show{opacity:1;}
   .scan-check svg{width:56px; height:56px;}
   .scan-placeholder{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    position:absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center;
     color:var(--muted); font-size:12px; flex-direction:column; gap:8px; text-align:center; padding: 10px;
   }
   
@@ -199,13 +199,13 @@
 
 
 <!-- 3D Viewer Modal -->
-<div id="threeModal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:300; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+<div id="threeModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:300; display:flex; flex-direction:column; align-items:center; justify-content:center;">
   <div style="position:absolute; top:20px; left:20px; color:#6fae8a; font-family:'IBM Plex Mono',monospace;">
     <div>[ 3D POINT CLOUD RENDER ]</div>
     <div style="font-size:12px; color:#c99a5b; margin-top:5px;">X, Y, Z Depth Estimation</div>
   </div>
   <button id="closeThreeBtn" style="position:absolute; top:20px; right:20px; background:none; border:none; color:#fff; cursor:pointer;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-  <div id="threeContainer" style="position:absolute; inset:0; z-index:1;"></div>
+  <div id="threeContainer" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:1;"></div>
   <div style="position:absolute; bottom:30px; display:flex; gap:20px;">
     <div style="background:rgba(20,24,26,0.8); padding:10px 20px; border-radius:20px; border:1px solid #c99a5b; color:#f2ece2; font-size:14px;">คลิกและลากเพื่อหมุน (Drag to rotate)</div>
   </div>
@@ -1426,7 +1426,7 @@
   
   let pointCloudCanvas = document.createElement('canvas');
   pointCloudCanvas.style.position = 'absolute';
-  pointCloudCanvas.style.inset = '0';
+  pointCloudCanvas.style.top = '0'; pointCloudCanvas.style.left = '0';
   pointCloudCanvas.style.width = '100%';
   pointCloudCanvas.style.height = '100%';
   pointCloudCanvas.style.zIndex = '1';
@@ -1462,6 +1462,7 @@
           pointCloudCanvas.width = w; pointCloudCanvas.height = h;
           
           pcCtx.clearRect(0, 0, w, h);
+          pcCtx.fillStyle = 'red'; pcCtx.fillRect(w/2 - 100, h/2 - 100, 200, 200);
           
           if(latestLandmarks) {
               const bridge = parseInt(bridgeSlider.value,10)/100 || 0;
@@ -1521,3 +1522,5 @@
   }
 </script>
 </body>
+
+

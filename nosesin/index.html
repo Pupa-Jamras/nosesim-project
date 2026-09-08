@@ -719,7 +719,7 @@
   let isAiMode = false;
   let smoothedNose = null;
   
-  let currentSourceType = 'video'; // video or image
+  let currentSourceType = 'video'; window.currentSourceType = 'video'; window.currentSourceType = currentSourceType; // video or image
   const imgElement = new Image();
 
   function setStatus(text){ statusText.textContent = text; }
@@ -734,7 +734,7 @@
   let isProcessingVideoFrame = false;
 
   function startCamera(){
-    currentSourceType = 'video';
+    currentSourceType = 'video'; window.currentSourceType = 'video';
     sourceBadgeText.textContent = 'LIVE';
     setStatus('กำลังโหลดโมเดล AI (Deep Learning)...');
     scanPlaceholder.innerHTML = '<div class="spinner"></div><span style="color:var(--bronze-soft)">กำลังโหลดโมเดล AI...</span>';
@@ -813,7 +813,7 @@
      
      if (target === 'main') {
          if(camera) { try{ camera.stop(); }catch(e){} }
-         currentSourceType = 'image';
+         currentSourceType = 'image'; window.currentSourceType = 'image';
          sourceBadgeText.textContent = 'PHOTO';
          appUploadBtn.textContent = 'เปิดกล้องสด';
          
@@ -1477,43 +1477,78 @@ function renderPointCloud() {
             const tipAdj = parseInt(tipSlider.value,10)/100 || 0;
             
             pcCtx.fillStyle = '#00FF00';
-            const cx = w/2; const cy = h/2;
-            const scale = Math.min(w, h) * 0.4;
-            
-            let pointsDrawn = 0;
-            for(let i=0; i<468; i++) {
-                const lm = window.latestLandmarks[i];
-                if(!lm) continue;
-                
-                let x = (lm.x - 0.5);
-                let y = (lm.y - 0.5);
-                let z = -(lm.z || 0);
-                
-                if(window.NOSE_IDX.includes(i)) {
-                   z += bridge * 0.2;
-                   if(i===4 || i===1) z += tipAdj * 0.3;
-                }
-                
-                let x1 = x * Math.cos(yaw) - z * Math.sin(yaw);
-                let z1 = z * Math.cos(yaw) + x * Math.sin(yaw);
-                
-                let y1 = y * Math.cos(pitch) - z1 * Math.sin(pitch);
-                let z2 = z1 * Math.cos(pitch) + y * Math.sin(pitch);
-                
-                const fov = 2.0;
-                const projScale = fov / (fov + z2);
-                
-                const px = cx + (x1 * scale * projScale);
-                const py = cy + (y1 * scale * projScale);
-                
-                if(!isNaN(px) && !isNaN(py)) {
-                    pcCtx.beginPath();
-                    pcCtx.arc(px, py, 4, 0, 2*Math.PI);
-                    pcCtx.fill();
-                    pointsDrawn++;
-                }
-            }
-            if(pointsDrawn === 0) {
+                                        const cx = w/2; const cy = h/2;
+              const scale = Math.min(w, h) * 0.45;
+              
+                            const srcCanvas = document.getElementById('outputCanvas');
+              let imgData = null;
+              if(srcCanvas && srcCanvas.width > 0) {
+                  try { imgData = srcCanvas.getContext('2d', {willReadFrequently: true}).getImageData(0, 0, srcCanvas.width, srcCanvas.height).data; } catch(e){}
+              }
+              const points2d = [];
+              for(let i=0; i<468; i++) {
+                  const lm = window.latestLandmarks[i];
+                  if(!lm) { points2d.push(null); continue; }
+                  
+                  let x = (lm.x - 0.5);
+                  let y = (lm.y - 0.5);
+                  let z = -(lm.z || 0);
+                  
+                  if(window.NOSE_IDX.includes(i)) {
+                     z += bridge * 0.2;
+                     if(i===4 || i===1) z += tipAdj * 0.3;
+                  }
+                  
+                  let x1 = x * Math.cos(yaw) - z * Math.sin(yaw);
+                  let z1 = z * Math.cos(yaw) + x * Math.sin(yaw);
+                  
+                  let y1 = y * Math.cos(pitch) - z1 * Math.sin(pitch);
+                  let z2 = z1 * Math.cos(pitch) + y * Math.sin(pitch);
+                  
+                  const fov = 2.0;
+                  const projScale = fov / (fov + z2);
+                  
+                  const px = cx + (x1 * scale * projScale);
+                  const py = cy + (y1 * scale * projScale);
+                  
+                                                      let color = '#00FF00';
+                  if(imgData && srcCanvas) {
+                      let mappedX = window.currentSourceType === 'video' ? (1.0 - lm.x) : lm.x;
+                      let vx = Math.max(0, Math.min(srcCanvas.width-1, Math.floor(mappedX * srcCanvas.width)));
+                      let vy = Math.max(0, Math.min(srcCanvas.height-1, Math.floor(lm.y * srcCanvas.height)));
+                      
+                      let idx = (vy * srcCanvas.width + vx) * 4;
+                      color = "rgb(" + imgData[idx] + "," + imgData[idx+1] + "," + imgData[idx+2] + ")";
+                  }
+                  
+                  points2d.push({x: px, y: py, color: color});
+              }
+
+              if(window.FACEMESH_TESSELATION) {
+                  window.FACEMESH_TESSELATION.forEach(pair => {
+                      const p1 = points2d[pair[0]];
+                      const p2 = points2d[pair[1]];
+                      if(p1 && p2 && !isNaN(p1.x) && !isNaN(p1.y) && !isNaN(p2.x) && !isNaN(p2.y)) {
+                          pcCtx.strokeStyle = p1.color;
+                          pcCtx.lineWidth = 1.5;
+                          pcCtx.beginPath();
+                          pcCtx.moveTo(p1.x, p1.y);
+                          pcCtx.lineTo(p2.x, p2.y);
+                          pcCtx.stroke();
+                          pointsDrawn++;
+                      }
+                  });
+              } else {
+                  points2d.forEach(p => {
+                      if(p && !isNaN(p.x) && !isNaN(p.y)) {
+                          pcCtx.fillStyle = p.color;
+                          pcCtx.beginPath();
+                          pcCtx.arc(p.x, p.y, 3.5, 0, 2*Math.PI);
+                          pcCtx.fill();
+                          pointsDrawn++;
+                      }
+                  });
+              }if(pointsDrawn === 0) {
                pcCtx.fillStyle = 'yellow'; pcCtx.font='20px Arial'; pcCtx.fillText('ERROR DRAWING POINTS', w/2, h/2);
             }
         }
@@ -1537,6 +1572,13 @@ if(closeThreeBtn){
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
 
 
 

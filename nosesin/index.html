@@ -1509,13 +1509,20 @@ function renderPointCloud() {
                   }
               }
               
+                            let avgX = 0.5, avgY = 0.5;
+              if(window.latestLandmarks && window.latestLandmarks.length === 468) {
+                  let sx = 0, sy = 0;
+                  for(let i=0; i<468; i++) { sx += window.latestLandmarks[i].x; sy += window.latestLandmarks[i].y; }
+                  avgX = sx / 468; avgY = sy / 468;
+              }
+              
               const points2d = [];
               for(let i=0; i<468; i++) {
                   const lm = window.latestLandmarks[i];
                   if(!lm) { points2d.push(null); continue; }
                   
-                  let x = (lm.x - 0.5);
-                  let y = (lm.y - 0.5);
+                  let x = (lm.x - avgX);
+                  let y = (lm.y - avgY);
                   let z = -(lm.z || 0);
                   
                   if(window.NOSE_IDX && window.NOSE_IDX.includes(i)) {
@@ -1538,9 +1545,7 @@ function renderPointCloud() {
                   points2d.push({x: px, y: py, z: z2});
               }
 
-                            // TEST RECTANGLE
-              pcCtx.fillStyle = 'blue';
-              pcCtx.fillRect(100, 100, 300, 300);
+                            
               
               // Draw Procedural Wireframe Mesh
               if(window.meshPairs) {
@@ -1589,6 +1594,8 @@ if(closeThreeBtn){
 </script>
 </body>
 </html>
+
+
 
 
 

@@ -1477,23 +1477,37 @@ function renderPointCloud() {
             const tipAdj = parseInt(tipSlider.value,10)/100 || 0;
             
             pcCtx.fillStyle = '#00FF00';
-                                                                    const cx = w/2; const cy = h/2;
+                                                                                  const cx = w/2; const cy = h/2;
               const scale = Math.min(w, h) * 0.45;
 
-              if(!window.offCanvas) {
-                  window.offCanvas = document.createElement('canvas');
-                  window.offCtx = window.offCanvas.getContext('2d', {willReadFrequently: true});
-              }
-              const video = document.querySelector('video');
-              let imgData = null;
-              if(video && video.videoWidth > 0) {
-                  window.offCanvas.width = video.videoWidth;
-                  window.offCanvas.height = video.videoHeight;
-                  window.offCtx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-                  try { imgData = window.offCtx.getImageData(0, 0, video.videoWidth, video.videoHeight).data; } catch(e){}
+              // Generate procedural mesh topology once
+              if(!window.meshPairs && window.latestLandmarks && window.latestLandmarks.length > 0) {
+                  window.meshPairs = [];
+                  const pts = window.latestLandmarks;
+                  for(let i=0; i<468; i++) {
+                      if(!pts[i]) continue;
+                      // Find 3 nearest neighbors based on initial 3D position
+                      let dists = [];
+                      for(let j=0; j<468; j++) {
+                          if(i===j || !pts[j]) continue;
+                          let dx = pts[i].x - pts[j].x;
+                          let dy = pts[i].y - pts[j].y;
+                          let dz = (pts[i].z||0) - (pts[j].z||0);
+                          let d = dx*dx + dy*dy + dz*dz;
+                          dists.push({idx: j, d: d});
+                      }
+                      dists.sort((a,b) => a.d - b.d);
+                      // Connect to 3 closest points
+                      for(let k=0; k<3; k++) {
+                          if(dists[k]) {
+                             // Avoid duplicates (only add if i < j)
+                             if(i < dists[k].idx) window.meshPairs.push([i, dists[k].idx]);
+                          }
+                      }
+                  }
               }
               
-              let pointsDrawn = 0; const points2d = [];
+              const points2d = [];
               for(let i=0; i<468; i++) {
                   const lm = window.latestLandmarks[i];
                   if(!lm) { points2d.push(null); continue; }
@@ -1519,32 +1533,35 @@ function renderPointCloud() {
                   const px = cx + (x1 * scale * projScale);
                   const py = cy + (y1 * scale * projScale);
                   
-                  let color = "rgb(0, 255, 100)";
-                  if(imgData) {
-                      let mappedX = window.currentSourceType === 'video' ? (1.0 - lm.x) : lm.x;
-                      let vx = Math.max(0, Math.min(video.videoWidth-1, Math.floor(mappedX * video.videoWidth)));
-                      let vy = Math.max(0, Math.min(video.videoHeight-1, Math.floor(lm.y * video.videoHeight)));
-                      let idx = (vy * video.videoWidth + vx) * 4;
-                      color = "rgb(" + imgData[idx] + "," + imgData[idx+1] + "," + imgData[idx+2] + ")";
-                  }
-                  
-                  points2d.push({x: px, y: py, z: z2, color: color});
+                  points2d.push({x: px, y: py, z: z2});
               }
 
-              // Sort points by Z so back points are drawn first (Painter's Algorithm)
-              const sortedPoints = points2d.filter(p => p !== null).sort((a, b) => b.z - a.z);
-
-              sortedPoints.forEach(p => {
-                  if(!isNaN(p.x) && !isNaN(p.y)) {
-                      pcCtx.fillStyle = p.color;
-                      pcCtx.beginPath();
-                      // Draw large overlapping circles to form a continuous skin surface
-                      let r = Math.max(2.0, 7.0 - (p.z * 15));
-                      pcCtx.arc(p.x, p.y, r, 0, 2*Math.PI);
-                      pcCtx.fill();
-                      pointsDrawn++;
-                  }
-              });if(pointsDrawn === 0) {
+              // Draw Procedural Wireframe Mesh
+              if(window.meshPairs) {
+                  pcCtx.strokeStyle = 'rgba(0, 255, 150, 0.4)'; // Cybernetic glowing green
+                  pcCtx.lineWidth = 1;
+                  pcCtx.beginPath();
+                  window.meshPairs.forEach(pair => {
+                      const p1 = points2d[pair[0]];
+                      const p2 = points2d[pair[1]];
+                      if(p1 && p2 && !isNaN(p1.x) && !isNaN(p1.y) && !isNaN(p2.x) && !isNaN(p2.y)) {
+                          pcCtx.moveTo(p1.x, p1.y);
+                          pcCtx.lineTo(p2.x, p2.y);
+                          pointsDrawn++;
+                      }
+                  });
+                  pcCtx.stroke();
+                  
+                  // Draw small glowing nodes at vertices
+                  pcCtx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                  points2d.forEach(p => {
+                      if(p && !isNaN(p.x) && !isNaN(p.y)) {
+                          pcCtx.beginPath();
+                          pcCtx.arc(p.x, p.y, 1.5, 0, 2*Math.PI);
+                          pcCtx.fill();
+                      }
+                  });
+              }if(pointsDrawn === 0) {
                pcCtx.fillStyle = 'yellow'; pcCtx.font='20px Arial'; pcCtx.fillText('ERROR DRAWING POINTS', w/2, h/2);
             }
         }
@@ -1568,6 +1585,7 @@ if(closeThreeBtn){
 </script>
 </body>
 </html>
+
 
 
 

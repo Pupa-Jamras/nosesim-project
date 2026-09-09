@@ -1432,6 +1432,8 @@ if (pointCloudCanvas) pointCloudCanvas.style.display = 'none';
 
 let scene, camera, renderer, faceMesh, wireframe;
 let isThreeInitialized = false;
+let staticLandmarks = null;
+let controls = null;
 
 function initThreeJS() {
     if (isThreeInitialized) return;
@@ -1459,16 +1461,16 @@ function initThreeJS() {
     scene.add(directionalLight);
 
     if (window.THREE.OrbitControls) {
-        const controls = new window.THREE.OrbitControls(camera, renderer.domElement);
+        controls = new window.THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
     }
 }
 
 function updateThreeJS() {
-    if (!window.latestLandmarks || window.latestLandmarks.length !== 468) return;
+    if (!staticLandmarks) return;
     
-    const pts = window.latestLandmarks;
+    const pts = staticLandmarks;
     
     if (!faceMesh && window.Delaunator && window.THREE) {
         const coords = [];
@@ -1498,13 +1500,20 @@ function updateThreeJS() {
         const video = document.querySelector('video');
         let material;
         if(video && video.videoWidth > 0) {
-            const videoTexture = new THREE.VideoTexture(video);
-            videoTexture.minFilter = THREE.LinearFilter;
-            videoTexture.magFilter = THREE.LinearFilter;
-            videoTexture.format = THREE.RGBFormat;
+            // SNAPSHOT THE VIDEO FRAME
+            const staticCanvas = document.createElement('canvas');
+            staticCanvas.width = video.videoWidth;
+            staticCanvas.height = video.videoHeight;
+            const ctx = staticCanvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            const staticTexture = new THREE.CanvasTexture(staticCanvas);
+            staticTexture.minFilter = THREE.LinearFilter;
+            staticTexture.magFilter = THREE.LinearFilter;
+            staticTexture.format = THREE.RGBFormat;
             
             material = new THREE.MeshStandardMaterial({
-                map: videoTexture,
+                map: staticTexture,
                 roughness: 0.4,
                 metalness: 0.1,
                 side: THREE.DoubleSide
@@ -1561,6 +1570,7 @@ function updateThreeJS() {
     faceMesh.geometry.attributes.uv.needsUpdate = true;
     faceMesh.geometry.computeVertexNormals(); 
 
+    if (controls) controls.update();
     renderer.render(scene, camera);
 }
 
@@ -1575,6 +1585,18 @@ requestAnimationFrame(renderLoop);
 
 if(threeBtn){
   threeBtn.addEventListener('click', () => {
+    // CAPTURE STATIC SNAPSHOT WHEN MODAL OPENS
+    if(window.latestLandmarks) {
+        staticLandmarks = JSON.parse(JSON.stringify(window.latestLandmarks));
+        
+        // Remove existing faceMesh to force a clean snapshot of texture + geometry
+        if (faceMesh && scene) {
+            scene.remove(faceMesh);
+            faceMesh.geometry.dispose();
+            faceMesh.material.dispose();
+            faceMesh = null;
+        }
+    }
     threeModal.classList.remove('hidden');
   });
 }
@@ -1586,6 +1608,7 @@ if(closeThreeBtn){
 </script>
 </body>
 </html>
+
 
 
 

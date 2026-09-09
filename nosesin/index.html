@@ -246,11 +246,18 @@
 <!-- 3D Modal -->
 <div id="threeModal" class="hidden" style="position:fixed; inset:0; z-index:10000; background:#1a1a1a; display:flex; flex-direction:column;">
   <div style="padding:16px; display:flex; justify-content:space-between; align-items:center; border-bottom:0.5px solid var(--line); z-index: 10001;">
-    <h3 style="margin:0; font-size:16px;">3D Rhinoplasty Simulator</h3>
+    <h3 style="margin:0; font-size:16px;">3D Face Scan — โครงหน้า 3 มิติ</h3>
     <button id="closeThreeBtn" style="background:none; border:none; color:var(--cream); font-size:24px; cursor:pointer;">&times;</button>
   </div>
   <div id="threeContainer" style="flex:1; position:relative; z-index: 1;"></div>
   <div id="countdownDiv" class="hidden" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:72px; font-weight:bold; color:var(--bronze); text-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 10002;">3</div>
+  <div style="padding:16px; display:flex; flex-direction:column; align-items:center; gap:10px; border-top:0.5px solid var(--line); z-index:10001;">
+    <div style="font-size:13px; color:var(--muted);">คลิกและลากเพื่อหมุนโมเดล (Drag to rotate) · Scroll เพื่อซูม</div>
+    <button id="proceedToEditorBtn" class="btn primary" style="width:100%; max-width:400px; padding:14px 20px; font-size:16px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:8px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      ไปปรับรูปทรงจมูก
+    </button>
+  </div>
 </div>
 
 <!-- ============ APP SCREEN ============ -->
@@ -968,9 +975,51 @@
 
   function triggerSuccess(){
     state = 'success';
-    setStatus('ยืนยันตัวตนสำเร็จ');
+    setStatus('ตรวจจับใบหน้าสำเร็จ — กำลังสร้างโมเดล 3D...');
     scanCheck.classList.add('show');
-    setTimeout(enterApp, 850);
+
+    // Capture face data for 3D scan
+    staticLandmarks = JSON.parse(JSON.stringify(latestLandmarks));
+    
+    const snapCanvas = document.createElement('canvas');
+    snapCanvas.width = video.videoWidth || CANVAS_W;
+    snapCanvas.height = video.videoHeight || CANVAS_H;
+    const snapCtx = snapCanvas.getContext('2d');
+    snapCtx.translate(snapCanvas.width, 0);
+    snapCtx.scale(-1, 1);
+    snapCtx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
+    
+    staticVideoTexture = new THREE.CanvasTexture(snapCanvas);
+    staticVideoTexture.colorSpace = THREE.SRGBColorSpace;
+
+    // Initialize Three.js if needed
+    if (!threeInitialized) {
+      initThreeJS();
+      threeInitialized = true;
+    }
+
+    // Show 3D modal with countdown
+    setTimeout(() => {
+      threeModal.classList.remove('hidden');
+      threeContainer.style.opacity = '0';
+      countdownDiv.classList.remove('hidden');
+      
+      let count = 3;
+      countdownDiv.textContent = count;
+      const timer = setInterval(() => {
+        count--;
+        if (count > 0) {
+          countdownDiv.textContent = count;
+        } else if (count === 0) {
+          countdownDiv.textContent = 'สแกน 3D สำเร็จ!';
+        } else {
+          clearInterval(timer);
+          countdownDiv.classList.add('hidden');
+          if (faceMesh3D) updateThreeJS();
+          threeContainer.style.opacity = '1';
+        }
+      }, 800);
+    }, 600);
   }
 
   function enterApp(){
@@ -1615,14 +1664,23 @@
     }, 800);
   });
 
-  closeThreeBtn.addEventListener('click', () => {
+  // Function to close 3D modal and go to nose editor
+  let hasEnteredApp = false;
+  function close3DAndProceed() {
     threeModal.classList.add('hidden');
     staticLandmarks = null;
     if (staticVideoTexture) {
       staticVideoTexture.dispose();
       staticVideoTexture = null;
     }
-  });
+    if (!hasEnteredApp) {
+      hasEnteredApp = true;
+      enterApp();
+    }
+  }
+
+  closeThreeBtn.addEventListener('click', close3DAndProceed);
+  document.getElementById('proceedToEditorBtn').addEventListener('click', close3DAndProceed);
 
 
 })();

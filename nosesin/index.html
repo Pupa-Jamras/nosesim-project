@@ -1,13 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NoseSim � ????????????????????????????????</title>
+<title>NoseSim — สแกนหน้าและจำลองจมูกแบบเรียลไทม์</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
 <style>
   :root{
     --bg:#14181a; --bg-2:#1b2123; --card:#1e2426;
@@ -26,7 +25,7 @@
 
   /* ---------- login screen ---------- */
   #loginScreen{
-    position:fixed; top:0; left:0; width:100%; height:100%; z-index:200; background:radial-gradient(circle at 50% 20%, #1c2224, #101415 70%);
+    position:fixed; inset:0; z-index:200; background:radial-gradient(circle at 50% 20%, #1c2224, #101415 70%);
     display:flex; align-items:center; justify-content:center; padding:24px; transition:opacity .5s ease;
   }
   .login-card{width:100%; max-width:400px; text-align:center;}
@@ -40,18 +39,18 @@
     border-radius:50%; overflow:hidden; background:#0c0f10; border:1px solid var(--line);
   }
   .scan-frame canvas{width:100%; height:100%; object-fit:cover; display:block;}
-  .scan-ring{position:absolute; top:0; left:0; width:100%; height:100%; width:240px; height:240px; transform:rotate(-90deg);}
+  .scan-ring{position:absolute; inset:0; width:240px; height:240px; transform:rotate(-90deg);}
   .scan-ring circle{fill:none; stroke-width:3;}
   .scan-ring .bg{stroke:rgba(255,255,255,0.08);}
   .scan-ring .fg{stroke:var(--bronze); stroke-linecap:round; transition:stroke-dashoffset .1s linear;}
   .scan-check{
-    position:absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     background:rgba(20,24,26,0.55); opacity:0; transition:opacity .3s;
   }
   .scan-check.show{opacity:1;}
   .scan-check svg{width:56px; height:56px;}
   .scan-placeholder{
-    position:absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     color:var(--muted); font-size:12px; flex-direction:column; gap:8px; text-align:center; padding: 10px;
   }
   
@@ -72,27 +71,7 @@
   .btn-outline { border: 1px solid var(--bronze-deep); color: var(--bronze-soft); display: flex; align-items: center; justify-content: center; gap: 8px;}
   .btn-outline:hover { background: rgba(201, 154, 91, 0.1); }
   .btn-outline:active { background: rgba(201, 154, 91, 0.2); }
-  .btn-outline.active { background: rgba(111, 174, 138, 0.2); border-color: var(--green); color: var(--green); }
-
-  /* ---------- before/after split compare ---------- */
-  .before-canvas{position:absolute; top:0; left:0; z-index:6; pointer-events:none;}
-  .compare-divider{position:absolute; top:0; bottom:0; width:2px; background:var(--bronze); z-index:7; transform:translateX(-1px); cursor:ew-resize; pointer-events:auto;}
-  .compare-handle{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:30px; height:30px; border-radius:50%; background:var(--bronze); color:#14181a; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:bold; box-shadow:0 2px 10px rgba(0,0,0,0.5);}
-  .compare-label{position:absolute; top:12px; z-index:8; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.05em; background:rgba(20,24,26,0.75); color:var(--bronze-soft); padding:5px 10px; border-radius:20px; pointer-events:none;}
-  .compare-label-before{left:12px;}
-  .compare-label-after{right:12px;}
-
-  /* ---------- analysis nudge banner (connects step 1 -> step 2) ---------- */
-  .analysis-nudge{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; background:rgba(201,154,91,0.08); border:1px solid var(--bronze-deep); border-radius:10px; padding:12px 16px; margin-bottom:16px;}
-  .analysis-nudge-text{font-size:12px; color:var(--bronze-soft); line-height:1.5;}
-  .analysis-nudge-text strong{color:var(--cream); display:block; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.05em; margin-bottom:2px;}
-  .analysis-nudge .btn{padding:7px 14px; font-size:11px; white-space:nowrap; flex-shrink:0;}
-  .analysis-nudge.done{background:rgba(111,174,138,0.08); border-color:var(--green);}
-  .analysis-nudge.done .analysis-nudge-text strong{color:var(--green);}
   
-  .upload-btn{font-family:'Inter',sans-serif; font-size:13px; padding:11px 22px; border-radius:8px; border:1px dashed var(--bronze-deep); background:transparent; color:var(--bronze-soft); cursor:pointer; width:100%; margin-top: 10px; transition:all .2s; display: flex; align-items: center; justify-content: center; gap: 8px;}
-  .upload-btn:hover{background: rgba(201,154,91,0.1);}
-
   .skip-link{display:block; margin-top:16px; font-size:12px; color:var(--muted); text-decoration:underline; cursor:pointer; background:none; border:none;}
   .skip-link:hover{color:var(--bronze-soft);}
   .login-note{font-size:11px; color:var(--muted); margin-top:24px; line-height:1.7; border-top:0.5px solid var(--line); padding-top:16px;}
@@ -121,15 +100,7 @@
   .tool-cam-side{position:relative; background:#101415; display:flex; align-items:center; justify-content:center; padding:24px; min-height:400px;}
   .live-frame{position:relative; border-radius:10px; overflow:hidden; line-height:0; box-shadow:0 0 0 0.5px var(--line); width:100%; max-width:440px; aspect-ratio:4/3; background:#0c0f10;}
   .live-frame canvas{width:100%; height:100%; display:block; object-fit:cover;}
-  #dualViewWrapper{display:none; width:100%; gap:8px;}
-  #dualViewWrapper.active{display:flex !important;}
-  #dualViewWrapper > div{flex:1; min-width:0;}
-  
-  .ai-hud{position:absolute; top:12px; right:12px; background:rgba(0,0,0,0.6); padding:10px; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#0f0; z-index:10; pointer-events:none; border:1px solid #0f0; line-height:1.4;}
-  .ai-hud div{margin-bottom:4px;}
-  .ai-hud span{color:#fff;}
-  
-  .live-badge{position:absolute; top:12px; left:12px; display:flex; align-items:center; gap:6px; font-size:11px; font-family:'IBM Plex Mono',monospace; background:rgba(20,24,26,0.7); padding:5px 10px; border-radius:20px; color:var(--bronze-soft); z-index:10;}
+  .live-badge{position:absolute; top:12px; left:12px; display:flex; align-items:center; gap:6px; font-size:11px; font-family:'IBM Plex Mono',monospace; background:rgba(20,24,26,0.7); padding:5px 10px; border-radius:20px; color:var(--bronze-soft);}
   .live-badge .dot{width:6px; height:6px; border-radius:50%; background:#e0554f;}
   .cam-fallback{position:absolute; inset:24px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; color:var(--muted); font-size:13px; text-align:center; padding:20px;}
 
@@ -139,8 +110,8 @@
   .slider-row{display:flex; flex-direction:column; gap:8px;}
   .slider-row .label-row{display:flex; justify-content:space-between; font-size:13px;}
   .slider-row .label-row span:last-child{color:var(--bronze-soft); font-family:'IBM Plex Mono',monospace; font-size:12px;}
-  input[type=range]{appearance:none; -webkit-appearance:none; width:100%; height:2px; background:var(--line); border-radius:2px; outline:none;}
-  input[type=range]::-webkit-slider-thumb{appearance:none; -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--bronze); cursor:pointer; border:2px solid var(--bg);}
+  input[type=range]{-webkit-appearance:none; width:100%; height:2px; background:var(--line); border-radius:2px; outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--bronze); cursor:pointer; border:2px solid var(--bg);}
   input[type=range]::-moz-range-thumb{width:16px; height:16px; border-radius:50%; background:var(--bronze); cursor:pointer; border:2px solid var(--bg);}
   
   .tool-actions{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
@@ -186,333 +157,16 @@
   .trust-card h3{font-size:16px; margin-bottom:10px;}
   .trust-card p{font-size:14px; color:var(--muted);}
 
-  footer{border-top:0.5px solid var(--line); padding:36px 0;}
-  footer .wrap{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;}
-  footer .brand{font-size:15px;}
-  footer p{font-size:13px; color:var(--muted);}
-</style>
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://unpkg.com/delaunator@5.0.0/delaunator.min.js"></script>
-</head>
-<body>
-
-
-<!-- 3D Viewer Modal -->
-<div id="threeModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:300; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-  <div style="position:absolute; top:20px; left:20px; color:#6fae8a; font-family:'IBM Plex Mono',monospace;">
-    <div>[ 3D POINT CLOUD RENDER ]</div>
-    <div style="font-size:12px; color:#c99a5b; margin-top:5px;">X, Y, Z Depth Estimation</div>
-  </div>
-  <button id="closeThreeBtn" style="position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.5); border:none; color:#fff; cursor:pointer; z-index:10000; border-radius:50%; padding:8px; display:flex; align-items:center; justify-content:center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-  <div id="threeContainer" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:1;"></div>
-  <div style="position:absolute; bottom:30px; display:flex; gap:20px;">
-    <div style="background:rgba(20,24,26,0.8); padding:10px 20px; border-radius:20px; border:1px solid #c99a5b; color:#f2ece2; font-size:14px;">??????????????????? (Drag to rotate)</div>
-  </div>
-</div>
-
-<video id="video" autoplay playsinline muted class="hidden"></video>
-
-<!-- ============ LOGIN SCREEN ============ -->
-<div id="loginScreen">
-  <div class="login-card">
-    <div class="login-brand">
-      <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="49" fill="#14181a" stroke="#5c4a2e" stroke-width="1"/><g transform="translate(38,24) scale(0.62)"><path d="M30,8 C14,35 12,58 18,78 C21,95 30,105 42,110 C52,114 57,120 54,127 C48,134 37,137 27,131 C20,127 18,119 21,110 C17,98 17,85 21,70 C24,53 27,38 31,25 Z" fill="#c99a5b"/></g></svg>
-      NoseSim
-    </div>
-    <h1>?????????????????????</h1>
-    <p class="sub">??????????????????????????? ????????????????????????????</p>
-
-    <div class="scan-frame" id="scanFrame">
-      <div class="scan-placeholder" id="scanPlaceholder">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M15 8h.01M4 7a2 2 0 012-2h2M20 7a2 2 0 00-2-2h-2M4 17a2 2 0 002 2h2M20 17a2 2 0 01-2 2h-2"/></svg>
-        <span>??????????????????</span>
-      </div>
-      <svg class="scan-ring" viewBox="0 0 120 120">
-        <circle class="bg" cx="60" cy="60" r="54"/>
-        <circle class="fg" id="ringFg" cx="60" cy="60" r="54" stroke-dasharray="339.3" stroke-dashoffset="339.3"/>
-      </svg>
-      <div class="scan-check" id="scanCheck">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#6fae8a" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M7 12l3 3 7-7"/></svg>
-      </div>
-    </div>
-
-    <p class="status-text" id="statusText">??????????????</p>
-    <button class="btn primary" id="startScanBtn">???????????????</button>
-    
-    <input type="file" id="photoUpload" accept="image/*" class="hidden">
-    <button class="upload-btn" id="uploadBtnLabel">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-      ????????????????
-    </button>
-    
-    <button class="skip-link" id="skipBtn">???????????????????????????</button>
-
-    <p class="login-note"><strong>????????:</strong> ????????????????????????????????????????? (???????????) ??????????????????????????????????????????????? ?????????????????????????????????????????????? ???????????????????????????</p>
-  </div>
-</div>
-
-<!-- ============ APP SCREEN ============ -->
-<div id="appScreen" class="hidden">
-  <nav>
-    <div class="wrap">
-      <div class="brand">
-        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="49" fill="#14181a" stroke="#5c4a2e" stroke-width="1"/><g transform="translate(38,24) scale(0.62)"><path d="M30,8 C14,35 12,58 18,78 C21,95 30,105 42,110 C52,114 57,120 54,127 C48,134 37,137 27,131 C20,127 18,119 21,110 C17,98 17,85 21,70 C24,53 27,38 31,25 Z" fill="#c99a5b"/></g></svg>
-        NoseSim
-      </div>
-      <ul>
-        <li><a href="#tool">??????????</a></li>
-        <li><a href="#analysis">?????????????????</a></li>
-        <li><a href="#how">???????</a></li>
-        <li><a href="#trust">???????????????</a></li>
-      </ul>
-      <span class="nav-status">???????????????</span>
-    </div>
-  </nav>
-
-  <section class="hero">
-    <div class="wrap">
-      <span class="eyebrow">?????????? 2 � ???????????????</span>
-      <h1>????????? ????????????????????<br><em>??????????? ??????????????????</em></h1>
-      <p class="lead">???????????????????????????????????? ? ????????? ????????????????????????????????? ??????????????????? ?????????????????????????????????????????????</p>
-
-      <div class="tool" id="tool">
-        <div class="tool-cam-side" style="flex-direction:column; padding:16px; gap:10px; align-items:stretch;">
-          <!-- Dual view wrapper: shown when compare mode ON -->
-          <div id="dualViewWrapper" style="display:none; width:100%; gap:8px; flex-direction:row;">
-            <!-- Before (original) -->
-            <div style="flex:1; position:relative; border-radius:10px; overflow:hidden; background:#0c0f10; box-shadow:0 0 0 0.5px var(--line); aspect-ratio:4/3; line-height:0;">
-              <canvas id="beforeSideCanvas" style="width:100%; height:100%; display:block; object-fit:cover;"></canvas>
-              <div style="position:absolute; top:8px; left:8px; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.05em; background:rgba(20,24,26,0.75); color:var(--bronze-soft); padding:4px 9px; border-radius:20px; pointer-events:none;">???????</div>
-            </div>
-            <!-- After (with filter) -->
-            <div style="flex:1; position:relative; border-radius:10px; overflow:hidden; background:#0c0f10; box-shadow:0 0 0 0.5px var(--line); aspect-ratio:4/3; line-height:0;" id="afterSideWrapper">
-              <div class="ai-hud hidden" id="aiHud" style="top:8px; right:8px;">
-                <div style="color:#fff; border-bottom:1px solid #333; padding-bottom:4px; margin-bottom:6px;">AI TRACKING DATA</div>
-                <div>YAW: <span id="hudYaw">0.0</span>�</div>
-                <div>PITCH: <span id="hudPitch">0.0</span>�</div>
-                <div>SMILE: <span id="hudSmile">0</span>%</div>
-              </div>
-              <div style="position:absolute; top:8px; left:8px; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.05em; background:rgba(20,24,26,0.75); color:var(--bronze-soft); padding:4px 9px; border-radius:20px; pointer-events:none; z-index:10;">????????</div>
-            </div>
-          </div>
-          <!-- Single view: shown when compare mode OFF -->
-          <div class="live-frame" id="liveFrame" style="width:100%; max-width:440px; margin:0 auto;">
-            <div class="live-badge"><span class="dot"></span><span id="sourceBadgeText">LIVE</span></div>
-            <div id="captureOverlay" class="hidden" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:20; display:flex; align-items:center; justify-content:center; color:white; font-size:72px; font-weight:bold; text-shadow:0 2px 10px rgba(0,0,0,0.5); pointer-events:none; transition: opacity 0.2s;"></div>
-            <div class="cam-fallback hidden" id="camFallback">
-              <span>????????????????????????? � ????????????????????????????????</span>
-            </div>
-          </div>
-        </div>
-        <div class="tool-controls">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <div>
-              <h3>???????????????????</h3>
-              <p>???????????????????????????????????????????????????</p>
-            </div>
-            <button class="upload-btn" id="appUploadBtn" style="width:auto; margin:0; padding:6px 12px; font-size:11px;">??????????</button>
-          </div>
-
-          <div class="analysis-nudge" id="analysisNudge">
-            <div class="analysis-nudge-text">
-              <strong>?????????? 1 � ?????????????</strong>
-              <span id="analysisNudgeMsg">????????????????????? ?????????????????????????????????????????????????</span>
-            </div>
-            <button class="btn btn-outline" id="analysisNudgeBtn" style="border-color:var(--bronze-soft);" onclick="document.getElementById('analysis').scrollIntoView({behavior:'smooth', block:'start'})">? ?????????</button>
-          </div>
-          
-          <div class="preset-row" style="display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; padding-bottom:4px;">
-            <button class="btn btn-outline preset-btn" data-preset="[15,-10,15,20,10,20,30]" style="white-space:nowrap; padding: 4px 10px; font-size:12px; border-color:var(--bronze-soft);">?? ?????????</button>
-            <button class="btn btn-outline preset-btn" data-preset="[25,10,25,30,-10,10,40]" style="white-space:nowrap; padding: 4px 10px; font-size:12px; border-color:var(--bronze-soft);">????? ??????????</button>
-            <button class="btn btn-outline preset-btn" data-preset="[40,20,0,10,-20,-10,50]" style="white-space:nowrap; padding: 4px 10px; font-size:12px; border-color:var(--bronze-soft);">?? ????????</button>
-            <button class="btn btn-outline preset-btn" data-preset="[0,0,0,0,0,0,0]" style="white-space:nowrap; padding: 4px 10px; font-size:12px; border-color:var(--muted);">?? ??????</button>
-          </div>
-          
-          <div class="slider-row">
-            <div class="label-row"><span>????/??????? (Bridge)</span><span id="bridgeValLabel" class="mono">0%</span></div>
-            <input type="range" id="bridgeSlider" min="-100" max="100" value="0">
-          </div>
-          <div class="slider-row">
-            <div class="label-row"><span>???????/???? (Hump/Slope)</span><span id="humpValLabel" class="mono">0%</span></div>
-            <input type="range" id="humpSlider" min="-100" max="100" value="0">
-          </div>
-          <div class="slider-row">
-            <div class="label-row"><span>???????????????? (Alar Width)</span><span id="alarValLabel" class="mono">0%</span></div>
-            <input type="range" id="alarSlider" min="-100" max="100" value="0">
-          </div>
-          <div class="slider-row">
-            <div class="label-row"><span>???????????? (Bridge Width)</span><span id="widthValLabel" class="mono">0%</span></div>
-            <input type="range" id="widthSlider" min="-100" max="100" value="0">
-          </div>
-          <div class="slider-row">
-            <div class="label-row"><span>???????? (Tip Size)</span><span id="tipValLabel" class="mono">0%</span></div>
-            <input type="range" id="tipSlider" min="-100" max="100" value="0">
-          </div>
-          <div class="slider-row">
-            <div class="label-row"><span>???????? (Tip Rotation)</span><span id="rotationValLabel" class="mono">0%</span></div>
-            <input type="range" id="rotationSlider" min="-100" max="100" value="0">
-          </div>
-          <div class="slider-row">
-            <div class="label-row"><span>????????/?????? (Projection)</span><span id="projectionValLabel" class="mono">0%</span></div>
-            <input type="range" id="projectionSlider" min="-100" max="100" value="0">
-          </div>
-
-          <div class="tool-actions">
-            <button class="btn btn-outline" id="aiModeBtn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-              AI Vision: OFF
-            </button>
-            <button class="btn btn-outline" id="threeBtn" style="border-color:#6fae8a; color:#6fae8a;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-              <span>?????????? 3D</span>
-            </button>
-            <button class="btn btn-outline" id="compareBtn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v18M16 3v18M3 8l-2 4 2 4M21 8l2 4-2 4"/></svg>
-              <span class="compare-btn-text">????????????? ????/????</span>
-            </button>
-            <button class="btn primary" id="captureBtn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px; margin-right:4px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-              ????????????
-            </button>
-            <button class="btn" id="resetBtn">??????????????</button>
-          </div>
-          <p class="tool-note"><strong>????????:</strong> ?????????????????????????????????????? ???????????????????????????? ??????????????????????????????????????????????</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="analysis" id="analysis">
-    <div class="wrap">
-      <div class="section-head">
-        <span class="eyebrow">?????????? 1 � ?????????????????</span>
-        <h2>?????????????? ??????????????????</h2>
-        <p>?????????????????????????????????????????????????????????? ???????????????????????????????????????????? ????????????????????????????? (Symmetry Score)</p>
-      </div>
-      <div class="analysis-card">
-        <div class="analysis-left">
-          <h3>????????????????</h3>
-          <p>??????????????? ?????????????????????????????????????????????????????</p>
-          <div class="analysis-status" id="analysisStatus" style="color:var(--bronze); font-weight:bold; margin-bottom:10px;"></div>
-          
-          <div id="analysisPreviewBox" class="hidden" style="width:100%; aspect-ratio:4/3; background:#000; border-radius:10px; overflow:hidden; border:1px solid var(--line); margin-bottom:14px; position:relative;">
-             <video id="analysisVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1); position:absolute; top:0; left:0;"></video>
-             <canvas id="analysisCanvas" width="480" height="360" style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; opacity:0;"></canvas>
-             <div id="analysisOverlay" class="hidden" style="position:absolute; top:0; left:0; width:100%; height:100%; background:transparent; z-index:20; display:flex; align-items:center; justify-content:center; color:white; font-size:96px; font-weight:bold; text-shadow:0 4px 20px rgba(0,0,0,0.8); pointer-events:none; transition: opacity 0.2s;"></div>
-          </div>
-          
-          <div style="display:flex; flex-direction:column; gap:10px;">
-             <button class="btn primary" id="analyzeSnapBtn" style="display:flex; justify-content:center; gap:8px;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> ??????? & ?????????
-             </button>
-             <button class="btn btn-outline" id="analyzeUploadBtn" style="display:flex; justify-content:center; gap:8px;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> ?????????????????
-             </button>
-          </div>
-        </div>
-        <div id="analysisRight">
-          <div class="analysis-placeholder" id="analysisPlaceholder">
-            <span>??????????????????????</span>
-            <span>?????? "?????????????????" ??????????</span>
-          </div>
-          <div class="analysis-result" id="analysisResult">
-            <div class="ar-block">
-              <div class="ar-label mono">?????????????????</div>
-              <div class="ar-value" id="arShapeName">-</div>
-              <div class="ar-desc" id="arShapeDesc"></div>
-            </div>
-            <div class="ar-block">
-              <div class="ar-label mono">?????????????????????</div>
-              <div class="ar-nose">
-                <svg id="arNoseIcon" viewBox="0 0 60 100"><path d="M30,6 C18,30 16,50 22,66 C26,78 32,86 40,90" fill="none" stroke="#c99a5b" stroke-width="2.4" stroke-linecap="round"/></svg>
-                <div>
-                  <div class="ar-value" id="arRecName" style="font-size:16px; margin-bottom:4px;">-</div>
-                  <div class="ar-desc" id="arRecDesc"></div>
-                  <button class="btn btn-outline" id="autoApplyBtn" style="margin-top:12px; padding:6px 12px; font-size:11px; width:fit-content; border-color:var(--bronze-soft);">? ???????????????????????????</button>
-                </div>
-              </div>
-            </div>
-            
-            <div class="ar-block" style="grid-column: span 2; padding: 12px 22px; background: rgba(255,255,255,0.02);">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-size:12px; color:var(--bronze-soft);">AI ???????????????</span>
-                    <select id="manualShapeSelect" style="background:var(--bg-card); color:var(--text); border:1px solid var(--line); border-radius:4px; padding:4px 8px; font-size:12px;">
-                        <option value="">????????????????????...</option>
-                        <option value="oval">??????????????????</option>
-                        <option value="round">??????????????????</option>
-                        <option value="square">??????????? ??????????</option>
-                        <option value="heart">????????????????????????</option>
-                        <option value="long">???????????????????</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="ar-block" style="grid-column: span 2; padding: 18px 22px;">
-              <div class="ar-label mono">??????????????????? (Symmetry Score)</div>
-              <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
-                <div style="flex:1; height:8px; background:var(--line); border-radius:4px; overflow:hidden;">
-                  <div id="symBar" style="height:100%; width:0%; background:var(--bronze); transition:width 1s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-                </div>
-                <div class="ar-value" id="symScore" style="font-size:18px; margin:0; color:var(--bronze-soft); min-width:48px;">0%</div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-      <p class="tool-note" style="margin-top:16px; border-top:none; padding-top:0;"><strong>????????:</strong> ?????????????????????????????????????????????????????????? ?????????????????????????????????????????????????? ?????????????????????????????????????????</p>
-    </div>
-  </section>
-
-  <section class="how" id="how">
-    <div class="wrap">
-      <div class="section-head">
-        <span class="eyebrow">???????</span>
-        <h2>?????????????????????????</h2>
-        <p>?????????????????????? 2 ???? ?????????????????????????????????????????????????</p>
-      </div>
-      <div class="steps">
-        <div class="step"><div class="num mono">01 / ????????</div><h3>????????????????????</h3><p>???????????????????????????????????????</p></div>
-        <div class="step"><div class="num mono">02 / ????????????</div><h3>??????????????????????????</h3><p>??????????????????????????????????????????????????</p></div>
-        <div class="step"><div class="num mono">03 / ????????</div><h3>???????????????????????</h3><p>???????????????? ???????????????????????????????????</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="trust" id="trust">
-    <div class="wrap">
-      <div class="section-head"><span class="eyebrow">???????????????</span><h2>???????????????????</h2></div>
-      <div class="trust-grid">
-        <div class="trust-card"><h3>?????????????????????????????</h3><p>???????????????????????????????????????????????????????????? ??????????????????????????????????????? ?????????????????????????</p></div>
-        <div class="trust-card"><h3>?????????????????????????</h3><p>????????????????????????????????????????????????? ????????????????????????????????????????????? ???????????????????????????</p></div>
-      </div>
-    </div>
-  </section>
-
   <footer>
     <div class="wrap">
       <div class="brand"><svg viewBox="0 0 100 100" width="24" height="24"><circle cx="50" cy="50" r="49" fill="#14181a" stroke="#5c4a2e" stroke-width="1"/><g transform="translate(38,24) scale(0.62)"><path d="M30,8 C14,35 12,58 18,78 C21,95 30,105 42,110 C52,114 57,120 54,127 C48,134 37,137 27,131 C20,127 18,119 21,110 C17,98 17,85 21,70 C24,53 27,38 31,25 Z" fill="#c99a5b"/></g></svg>NoseSim</div>
-      <p>� 2026 NoseSim � ???????????????????????? ?????????????????????????????</p>
+      <p>© 2026 NoseSim · โปรเจคจำลองเพื่อการศึกษา ไม่ทดแทนคำวินิจฉัยทางการแพทย์</p>
     </div>
   </footer>
 </div>
 
-<!-- Cropper Modal -->
-<div id="cropperModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
-  <div style="width:100%; max-width:500px; height:60vh; background:#000; border-radius:12px; overflow:hidden; position:relative;">
-    <img id="cropperImage" style="max-width:100%; display:block;" src="">
-  </div>
-  <div style="margin-top:20px; display:flex; gap:16px;">
-    <button id="cropperCancelBtn" class="btn btn-outline" style="min-width:120px;">??????</button>
-    <button id="cropperConfirmBtn" class="btn primary" style="min-width:120px;">????????????</button>
-  </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <script>
 /* global FaceMesh, Camera */
@@ -1241,13 +895,13 @@
     cctx.textAlign = 'center';
     cctx.fillStyle = '#e3c390';
     cctx.font = 'bold 16px "IBM Plex Mono", monospace';
-    cctx.fillText('???????? � BEFORE', CANVAS_W / 2, 24);
-    cctx.fillText('???????? � AFTER', CANVAS_W + GAP + CANVAS_W / 2, 24);
+    cctx.fillText('???????? � BEFORE', CANVAS_W / 2, 24);
+    cctx.fillText('???????? � AFTER', CANVAS_W + GAP + CANVAS_W / 2, 24);
 
     cctx.textAlign = 'right';
     cctx.font = '11px "IBM Plex Mono", monospace';
     cctx.fillStyle = 'rgba(227,195,144,0.55)';
-    cctx.fillText('NoseSim � ?????????????????????????? ????????????????????????????', combined.width - 10, combined.height - 7);
+    cctx.fillText('NoseSim � ?????????????????????????? ????????????????????????????', combined.width - 10, combined.height - 7);
 
     const dataURL = combined.toDataURL('image/jpeg', 0.92);
     const link = document.createElement('a');
@@ -1322,8 +976,8 @@
     // Remember this result and light up the "step 1 done" banner in the tool panel
     lastAnalysisInfo = info;
     analysisNudge.classList.add('done');
-    analysisNudge.querySelector('.analysis-nudge-text strong').textContent = `?????????? 1 ????????? � ${info.name}`;
-    analysisNudgeMsg.textContent = `????????????: ${info.rec} � ?????????? ${Math.round(info.symmetryScore)}%`;
+    analysisNudge.querySelector('.analysis-nudge-text strong').textContent = `?????????? 1 ????????? � ${info.name}`;
+    analysisNudgeMsg.textContent = `????????????: ${info.rec} � ?????????? ${Math.round(info.symmetryScore)}%`;
     analysisNudgeBtn.textContent = '? ??????????????';
     
     // Auto Apply Button Logic (in the analysis card itself)
@@ -1420,269 +1074,191 @@
 })();
 
     
-/* ---------- CUSTOM THREE.JS VIEWER LOGIC ---------- */
-const threeBtn = document.getElementById('threeBtn');
-const threeModal = document.getElementById('threeModal');
-const closeThreeBtn = document.getElementById('closeThreeBtn');
-const threeContainer = document.getElementById('threeContainer');
 
-// Hide the old 2D Canvas
-const pointCloudCanvas = document.getElementById('pointCloudCanvas');
-if (pointCloudCanvas) pointCloudCanvas.style.display = 'none';
+  /* ---------- CUSTOM THREE.JS VIEWER LOGIC ---------- */
+  const threeBtn = document.getElementById('threeBtn');
+  const threeModal = document.getElementById('threeModal');
+  const closeThreeBtn = document.getElementById('closeThreeBtn');
+  const threeContainer = document.getElementById('threeContainer');
+  const countdownDiv = document.getElementById('countdownDiv');
 
-let scene, camera, renderer, faceMesh, wireframe;
-let isThreeInitialized = false;
-let staticLandmarks = null;
-let controls = null;
+  let scene, camera3D, renderer, gltfModel, faceMesh3D, wireframeMesh;
+  let threeInitialized = false;
+  let staticLandmarks = null;
+  let staticVideoTexture = null;
 
-function initThreeJS() {
-    if (isThreeInitialized) return;
-    isThreeInitialized = true;
-
+  function initThreeJS() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x1a1a1a);
 
-    const w = threeContainer.clientWidth || window.innerWidth;
-    const h = threeContainer.clientHeight || window.innerHeight;
-
-    camera = new THREE.PerspectiveCamera(35, w / h, 0.1, 100);
-    camera.position.z = 2.5;
+    camera3D = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera3D.position.set(0, 0, 450);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(w, h);
+    renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     threeContainer.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    dirLight.position.set(0, 50, 500);
+    scene.add(dirLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    directionalLight.position.set(0, 0.5, 1);
-    scene.add(directionalLight);
+    // Load High-Poly GLB
+    const loader = new THREE.GLTFLoader();
+    loader.load('canonical_face.glb', function(gltf) {
+      gltfModel = gltf.scene;
+      
+      // Extract the mesh
+      gltfModel.traverse(function(child) {
+        if (child.isMesh) {
+          faceMesh3D = child;
+          
+          // Apply professional material
+          faceMesh3D.material = new THREE.MeshStandardMaterial({ 
+            color: 0xffffff, 
+            side: THREE.DoubleSide,
+            roughness: 0.3,
+            metalness: 0.2
+          });
+          
+          // Create wireframe overlay
+          const wireMat = new THREE.MeshBasicMaterial({
+            color: 0x00ffcc,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.3
+          });
+          wireframeMesh = new THREE.Mesh(faceMesh3D.geometry, wireMat);
+          wireframeMesh.scale.set(1.001, 1.001, 1.001);
+          gltfModel.add(wireframeMesh);
+        }
+      });
+      
+      // Center and scale
+      gltfModel.scale.set(1, 1, 1);
+      gltfModel.position.set(0, 0, 0);
+      scene.add(gltfModel);
+      
+      if (staticLandmarks) updateThreeJS();
+      
+    }, undefined, function(error) {
+      console.error(error);
+      alert('Error loading GLB model!');
+    });
 
-    if (window.THREE.OrbitControls) {
-        controls = new window.THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-    }
-}
+    window.addEventListener('resize', () => {
+      if(!threeModal.classList.contains('hidden')) {
+        camera3D.aspect = window.innerWidth / window.innerHeight;
+        camera3D.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+    });
 
-function updateThreeJS() {
-    if (!staticLandmarks) return;
+    animateThreeJS();
+  }
+
+  function updateThreeJS() {
+    if (!faceMesh3D || !staticLandmarks) return;
+    const geometry = faceMesh3D.geometry;
+    const positions = geometry.attributes.position.array;
+    const uvs = geometry.attributes.uv.array;
+
+    const w = CANVAS_W; 
+    const h = CANVAS_H;
+
+    // We assume the GLB has exactly 468 vertices mapping to FaceMesh.
+    if (positions.length / 3 === 468) {
+        for (let i = 0; i < 468; i++) {
+          const lm = staticLandmarks[i];
+          positions[i * 3] = (lm.x - 0.5) * w;
+          positions[i * 3 + 1] = -(lm.y - 0.5) * h;
+          positions[i * 3 + 2] = -lm.z * w; 
     
-    const pts = staticLandmarks;
-    
-    if (!faceMesh && window.Delaunator && window.THREE) {
-        const coords = [];
-        for(let i=0; i<468; i++) { coords.push(pts[i].x, pts[i].y); }
-        const delaunay = new window.Delaunator(coords);
-        
-        const indices = [];
-        for (let i = 0; i < delaunay.triangles.length; i += 3) {
-            const p1 = pts[delaunay.triangles[i]];
-            const p2 = pts[delaunay.triangles[i+1]];
-            const p3 = pts[delaunay.triangles[i+2]];
-            
-            const d12 = Math.hypot(p1.x-p2.x, p1.y-p2.y);
-            const d23 = Math.hypot(p2.x-p3.x, p2.y-p3.y);
-            const d31 = Math.hypot(p3.x-p1.x, p3.y-p1.y);
-            
-            if(d12 < 0.15 && d23 < 0.15 && d31 < 0.15) {
-                indices.push(delaunay.triangles[i], delaunay.triangles[i+1], delaunay.triangles[i+2]);
-            }
+          uvs[i * 2] = lm.x;
+          uvs[i * 2 + 1] = 1.0 - lm.y;
         }
-
-        const geometry = new THREE.BufferGeometry();
-        geometry.setIndex(indices);
-        geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(468 * 3), 3));
-        geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(468 * 2), 2));
-        
-        const video = document.querySelector('video');
-        let material;
-        if(video && video.videoWidth > 0) {
-            // SNAPSHOT THE VIDEO FRAME
-            const staticCanvas = document.createElement('canvas');
-            staticCanvas.width = video.videoWidth;
-            staticCanvas.height = video.videoHeight;
-            const ctx = staticCanvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
-
-            const staticTexture = new THREE.CanvasTexture(staticCanvas);
-            staticTexture.minFilter = THREE.LinearFilter;
-            staticTexture.magFilter = THREE.LinearFilter;
-            staticTexture.format = THREE.RGBFormat;
-            
-            material = new THREE.MeshStandardMaterial({
-                map: staticTexture,
-                roughness: 0.4,
-                metalness: 0.1,
-                side: THREE.DoubleSide
-            });
-        } else {
-            material = new THREE.MeshStandardMaterial({ color: 0xcccccc });
-        }
-
-        faceMesh = new THREE.Mesh(geometry, material);
-        
-        const wireMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.15 });
-        wireframe = new THREE.LineSegments(new THREE.WireframeGeometry(geometry), wireMat);
-        faceMesh.add(wireframe);
-
-        scene.add(faceMesh);
+        geometry.attributes.position.needsUpdate = true;
+        geometry.attributes.uv.needsUpdate = true;
+        geometry.computeVertexNormals();
+    } else {
+        console.warn("GLB vertex count mismatch: " + (positions.length/3));
     }
 
-    if (!faceMesh) return;
-
-    const bridgeSlider = document.getElementById("bridgeSlider"); 
-    const tipSlider = document.getElementById("tipSlider"); 
-    const bridge = parseInt(bridgeSlider.value,10)/100 || 0;
-    const tipAdj = parseInt(tipSlider.value,10)/100 || 0;
-
-    let sx = 0, sy = 0, sz = 0;
-    for(let i=0; i<468; i++) { sx += pts[i].x; sy += pts[i].y; sz += (pts[i].z||0); }
-    const avgX = sx / 468; const avgY = sy / 468; const avgZ = sz / 468;
-
-    const positions = faceMesh.geometry.attributes.position.array;
-    const uvs = faceMesh.geometry.attributes.uv.array;
-
-    for (let i = 0; i < 468; i++) {
-        const lm = pts[i];
-        
-        let x = (lm.x - avgX) * 3.5;
-        let y = -(lm.y - avgY) * 3.5; 
-        let z = -(lm.z - avgZ) * 3.5;
-        
-        if(window.NOSE_IDX && window.NOSE_IDX.includes(i)) {
-            z += bridge * 0.4;
-            if(i===4 || i===1) z += tipAdj * 0.5;
-        }
-
-        positions[i * 3] = x;
-        positions[i * 3 + 1] = y;
-        positions[i * 3 + 2] = z;
-
-                // Fix horizontal UV alignment. The staticCanvas draws the raw (unmirrored) video frame.
-        // Therefore, lm.x perfectly maps to the canvas texture without any flipping.
-        uvs[i * 2] = lm.x;
-        uvs[i * 2 + 1] = 1.0 - lm.y;
+    if (staticVideoTexture) {
+      faceMesh3D.material.map = staticVideoTexture;
+      faceMesh3D.material.needsUpdate = true;
     }
+  }
 
-    faceMesh.geometry.attributes.position.needsUpdate = true;
-    faceMesh.geometry.attributes.uv.needsUpdate = true;
-    faceMesh.geometry.computeVertexNormals(); 
-
-    if (controls) controls.update();
-    renderer.render(scene, camera);
-}
-
-function renderLoop() {
+  function animateThreeJS() {
+    requestAnimationFrame(animateThreeJS);
     if (!threeModal.classList.contains('hidden')) {
-        initThreeJS();
-        updateThreeJS();
+      if (gltfModel) {
+          gltfModel.rotation.y = Math.sin(Date.now() * 0.001) * 0.3;
+          gltfModel.rotation.x = Math.sin(Date.now() * 0.0007) * 0.1;
+      }
+      renderer.render(scene, camera3D);
     }
-    requestAnimationFrame(renderLoop);
-}
-requestAnimationFrame(renderLoop);
+  }
 
-if(threeBtn){
   threeBtn.addEventListener('click', () => {
-    if(!window.latestLandmarks) return;
+    if (!latestLandmarks) {
+      alert('กรุณารอให้ระบบจับใบหน้าก่อนครับ');
+      return;
+    }
 
-    // Create countdown overlay
-    const countdownDiv = document.createElement('div');
-    countdownDiv.style.position = 'fixed';
-    countdownDiv.style.top = '0';
-    countdownDiv.style.left = '0';
-    countdownDiv.style.width = '100%';
-    countdownDiv.style.height = '100%';
-    countdownDiv.style.background = 'rgba(0,0,0,0.6)';
-    countdownDiv.style.color = '#fff';
-    countdownDiv.style.fontSize = '120px';
-    countdownDiv.style.fontFamily = 'Inter, sans-serif';
-    countdownDiv.style.fontWeight = 'bold';
-    countdownDiv.style.display = 'flex';
-    countdownDiv.style.alignItems = 'center';
-    countdownDiv.style.justifyContent = 'center';
-    countdownDiv.style.zIndex = '99999';
-    countdownDiv.style.textShadow = '0 4px 20px rgba(0,0,0,0.5)';
-    document.body.appendChild(countdownDiv);
+    staticLandmarks = JSON.parse(JSON.stringify(latestLandmarks));
+    
+    const snapCanvas = document.createElement('canvas');
+    snapCanvas.width = video.videoWidth;
+    snapCanvas.height = video.videoHeight;
+    const snapCtx = snapCanvas.getContext('2d');
+    
+    snapCtx.translate(snapCanvas.width, 0);
+    snapCtx.scale(-1, 1);
+    snapCtx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
+    
+    staticVideoTexture = new THREE.CanvasTexture(snapCanvas);
+    staticVideoTexture.colorSpace = THREE.SRGBColorSpace;
+
+    if (!threeInitialized) {
+      initThreeJS();
+      threeInitialized = true;
+    }
+    
+    threeModal.classList.remove('hidden');
+    threeContainer.style.opacity = '0';
+    countdownDiv.classList.remove('hidden');
     
     let count = 3;
     countdownDiv.textContent = count;
-    
-    // Play a tiny animation on number change
-    countdownDiv.style.transition = 'transform 0.2s';
-    
     const timer = setInterval(() => {
-        count--;
-        countdownDiv.style.transform = 'scale(1.2)';
-        setTimeout(() => countdownDiv.style.transform = 'scale(1)', 200);
-
-        if(count > 0) {
-            countdownDiv.textContent = count;
-        } else if (count === 0) {
-            countdownDiv.textContent = 'SNAP!';
-            countdownDiv.style.background = 'rgba(255,255,255,0.8)'; // Flash effect
-        } else {
-            clearInterval(timer);
-            document.body.removeChild(countdownDiv);
-            
-            // CAPTURE STATIC SNAPSHOT
-            if(window.latestLandmarks) {
-                staticLandmarks = JSON.parse(JSON.stringify(window.latestLandmarks));
-                
-                if (faceMesh && scene) {
-                    scene.remove(faceMesh);
-                    faceMesh.geometry.dispose();
-                    faceMesh.material.dispose();
-                    faceMesh = null;
-                }
-            }
-            threeModal.classList.remove('hidden');
-        }
-    }, 1000);
+      count--;
+      if (count > 0) {
+        countdownDiv.textContent = count;
+      } else if (count === 0) {
+        countdownDiv.textContent = 'สแกน 3D GLB สำเร็จ!';
+      } else {
+        clearInterval(timer);
+        countdownDiv.classList.add('hidden');
+        if (faceMesh3D) updateThreeJS();
+        threeContainer.style.opacity = '1';
+      }
+    }, 800);
   });
-}
-if(closeThreeBtn){
+
   closeThreeBtn.addEventListener('click', () => {
     threeModal.classList.add('hidden');
+    staticLandmarks = null;
+    if (staticVideoTexture) {
+      staticVideoTexture.dispose();
+      staticVideoTexture = null;
+    }
   });
-}
+
+})();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

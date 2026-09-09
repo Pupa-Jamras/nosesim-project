@@ -756,7 +756,7 @@
       camera.start().then(() => {
         scanPlaceholder.classList.add('hidden');
         state = 'scanning';
-        setStatus('กรุณาจัดใบหน้าให้อยู่ในกรอบ');
+        setStatus('กำลังสแกนใบหน้าอัตโนมัติ...');
       }).catch(onCameraError);
     }catch(err){ onCameraError(err); }
   }
@@ -925,14 +925,14 @@
           return;
         }
         if(!detectStart) detectStart = performance.now();
-        const frac = Math.min(1, (performance.now() - detectStart) / 1600);
+        const frac = Math.min(1, (performance.now() - detectStart) / 600);
         ringFg.style.strokeDashoffset = RING_LEN * (1 - frac);
         setStatus('กำลังตรวจจับใบหน้า...');
         if(frac >= 1){ triggerSuccess(); }
       } else {
         detectStart = null;
         ringFg.style.strokeDashoffset = RING_LEN;
-        setStatus(currentSourceType === 'image' ? 'ไม่พบใบหน้าในรูปภาพ' : 'กรุณาจัดใบหน้าให้อยู่ในกรอบ');
+        setStatus(currentSourceType === 'image' ? 'ไม่พบใบหน้าในรูปภาพ' : 'กำลังค้นหาใบหน้า...');
         smoothedNose = null;
       }
     } else if(state === 'filter'){
@@ -1180,6 +1180,12 @@
   rotationSlider.addEventListener('input', onSliderChange);
   projectionSlider.addEventListener('input', onSliderChange);
 
+
+  // Auto-start: เปิดกล้องและสแกนอัตโนมัติทันทีที่โหลดหน้าเว็บ
+  startScanBtn.classList.add('hidden');
+  if(!faceMesh) initFaceMesh();
+  scanFrame.insertBefore(canvas, ringFg.closest('svg'));
+  startCamera();
 
   startScanBtn.addEventListener('click', () => {
     startScanBtn.classList.add('hidden');

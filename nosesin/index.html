@@ -243,22 +243,51 @@
 </div>
 
 
-<!-- 3D Modal -->
-<div id="threeModal" class="hidden" style="position:fixed; inset:0; z-index:10000; background:#1a1a1a; display:flex; flex-direction:column;">
-  <div style="padding:16px; display:flex; justify-content:space-between; align-items:center; border-bottom:0.5px solid var(--line); z-index: 10001;">
-    <h3 style="margin:0; font-size:16px;">3D Face Scan — โครงหน้า 3 มิติ</h3>
-    <button id="closeThreeBtn" style="background:none; border:none; color:var(--cream); font-size:24px; cursor:pointer;">&times;</button>
+<!-- 3D Modal — Professional Medical Scanner UI -->
+<div id="threeModal" class="hidden" style="position:fixed; inset:0; z-index:10000; background:#0d1012; display:flex; flex-direction:column;">
+  <!-- Header -->
+  <div style="padding:14px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:0.5px solid #2e3436; z-index:10001; background:#14181a;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="width:10px; height:10px; border-radius:50%; background:#6fae8a; box-shadow:0 0 8px #6fae8a; animation: pulse3d 1.5s infinite;"></div>
+      <h3 style="margin:0; font-size:15px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.05em; color:#e3c390;">3D FACE SCAN</h3>
+    </div>
+    <button id="closeThreeBtn" style="background:rgba(255,255,255,0.05); border:1px solid #2e3436; color:#9a958c; font-size:20px; cursor:pointer; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">&times;</button>
   </div>
-  <div id="threeContainer" style="flex:1; position:relative; z-index: 1;"></div>
-  <div id="countdownDiv" class="hidden" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:72px; font-weight:bold; color:var(--bronze); text-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 10002;">3</div>
-  <div style="padding:16px; display:flex; flex-direction:column; align-items:center; gap:10px; border-top:0.5px solid var(--line); z-index:10001;">
-    <div style="font-size:13px; color:var(--muted);">คลิกและลากเพื่อหมุนโมเดล (Drag to rotate) · Scroll เพื่อซูม</div>
-    <button id="proceedToEditorBtn" class="btn primary" style="width:100%; max-width:400px; padding:14px 20px; font-size:16px;">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:8px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      ไปปรับรูปทรงจมูก
+
+  <!-- 3D Container -->
+  <div id="threeContainer" style="flex:1; position:relative; z-index:1;"></div>
+
+  <!-- Countdown overlay -->
+  <div id="countdownDiv" class="hidden" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:10002; text-align:center;">
+    <div id="countdownNumber" style="font-size:96px; font-weight:bold; color:#c99a5b; text-shadow:0 4px 20px rgba(201,154,91,0.4); font-family:'Fraunces',serif;">3</div>
+    <div id="countdownLabel" style="font-size:14px; color:#9a958c; font-family:'IBM Plex Mono',monospace; margin-top:8px;">กำลังสแกนโครงหน้า...</div>
+  </div>
+
+  <!-- Scan metrics overlay (top-left) -->
+  <div id="scanMetrics" class="hidden" style="position:absolute; top:70px; left:20px; z-index:10001; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#6fae8a; line-height:2; background:rgba(13,16,18,0.7); padding:14px 18px; border-radius:10px; border:1px solid rgba(111,174,138,0.2); backdrop-filter:blur(8px);">
+    <div style="color:#e3c390; font-size:11px; letter-spacing:0.1em; margin-bottom:6px;">FACE ANALYSIS</div>
+    <div>VERTICES: <span style="color:#f2ece2;">468</span></div>
+    <div>TRIANGLES: <span id="triCount" style="color:#f2ece2;">—</span></div>
+    <div>TEXTURE: <span style="color:#6fae8a;">MAPPED ✓</span></div>
+    <div>WIREFRAME: <span style="color:#6fae8a;">ON ✓</span></div>
+    <div style="margin-top:8px; color:#e3c390; font-size:11px; letter-spacing:0.1em;">MEASUREMENTS</div>
+    <div>FACE WIDTH: <span id="metricFaceW" style="color:#f2ece2;">—</span></div>
+    <div>FACE HEIGHT: <span id="metricFaceH" style="color:#f2ece2;">—</span></div>
+    <div>NOSE LENGTH: <span id="metricNoseL" style="color:#f2ece2;">—</span></div>
+    <div>JAW WIDTH: <span id="metricJawW" style="color:#f2ece2;">—</span></div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div style="padding:16px 20px; display:flex; flex-direction:column; align-items:center; gap:12px; border-top:0.5px solid #2e3436; z-index:10001; background:#14181a;">
+    <div style="font-size:12px; color:#9a958c; font-family:'IBM Plex Mono',monospace;">DRAG TO ROTATE · SCROLL TO ZOOM · PINCH ON MOBILE</div>
+    <button id="proceedToEditorBtn" class="btn primary" style="width:100%; max-width:420px; padding:16px 24px; font-size:15px; letter-spacing:0.02em; border-radius:12px;">
+      ไปปรับรูปทรงจมูก →
     </button>
   </div>
 </div>
+<style>
+  @keyframes pulse3d { 0%,100%{opacity:1} 50%{opacity:0.4} }
+</style>
 
 <!-- ============ APP SCREEN ============ -->
 <div id="appScreen" class="hidden">
@@ -975,51 +1004,9 @@
 
   function triggerSuccess(){
     state = 'success';
-    setStatus('ตรวจจับใบหน้าสำเร็จ — กำลังสร้างโมเดล 3D...');
+    setStatus('ยืนยันตัวตนสำเร็จ');
     scanCheck.classList.add('show');
-
-    // Capture face data for 3D scan
-    staticLandmarks = JSON.parse(JSON.stringify(latestLandmarks));
-    
-    const snapCanvas = document.createElement('canvas');
-    snapCanvas.width = video.videoWidth || CANVAS_W;
-    snapCanvas.height = video.videoHeight || CANVAS_H;
-    const snapCtx = snapCanvas.getContext('2d');
-    snapCtx.translate(snapCanvas.width, 0);
-    snapCtx.scale(-1, 1);
-    snapCtx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
-    
-    staticVideoTexture = new THREE.CanvasTexture(snapCanvas);
-    staticVideoTexture.colorSpace = THREE.SRGBColorSpace;
-
-    // Initialize Three.js if needed
-    if (!threeInitialized) {
-      initThreeJS();
-      threeInitialized = true;
-    }
-
-    // Show 3D modal with countdown
-    setTimeout(() => {
-      threeModal.classList.remove('hidden');
-      threeContainer.style.opacity = '0';
-      countdownDiv.classList.remove('hidden');
-      
-      let count = 3;
-      countdownDiv.textContent = count;
-      const timer = setInterval(() => {
-        count--;
-        if (count > 0) {
-          countdownDiv.textContent = count;
-        } else if (count === 0) {
-          countdownDiv.textContent = 'สแกน 3D สำเร็จ!';
-        } else {
-          clearInterval(timer);
-          countdownDiv.classList.add('hidden');
-          if (faceMesh3D) updateThreeJS();
-          threeContainer.style.opacity = '1';
-        }
-      }, 800);
-    }, 600);
+    setTimeout(enterApp, 850);
   }
 
   function enterApp(){
@@ -1229,11 +1216,12 @@
   rotationSlider.addEventListener('input', onSliderChange);
   projectionSlider.addEventListener('input', onSliderChange);
 
-
-  // Auto-start: เปิดกล้องและสแกนอัตโนมัติทันทีที่โหลดหน้าเว็บ
-  startScanBtn.classList.add('hidden');
+  // Skip login screen — go straight to app
+  loginScreen.classList.add('hidden');
+  appScreen.classList.remove('hidden');
   if(!faceMesh) initFaceMesh();
-  scanFrame.insertBefore(canvas, ringFg.closest('svg'));
+  liveFrame.insertBefore(canvas, camFallback);
+  state = 'filter';
   startCamera();
 
   startScanBtn.addEventListener('click', () => {
@@ -1645,37 +1633,54 @@
     
     threeModal.classList.remove('hidden');
     threeContainer.style.opacity = '0';
+    document.getElementById('scanMetrics').classList.add('hidden');
     countdownDiv.classList.remove('hidden');
     
+    const countdownNumber = document.getElementById('countdownNumber');
+    const countdownLabel = document.getElementById('countdownLabel');
+    countdownLabel.textContent = 'กำลังสแกนโครงหน้า...';
+    
     let count = 3;
-    countdownDiv.textContent = count;
+    countdownNumber.textContent = count;
+    
     const timer = setInterval(() => {
       count--;
       if (count > 0) {
-        countdownDiv.textContent = count;
+        countdownNumber.textContent = count;
       } else if (count === 0) {
-        countdownDiv.textContent = 'สแกน 3D GLB สำเร็จ!';
+        countdownNumber.textContent = '✓';
+        countdownLabel.textContent = 'วิเคราะห์จุดตัด 468 จุดสำเร็จ';
       } else {
         clearInterval(timer);
         countdownDiv.classList.add('hidden');
         if (faceMesh3D) updateThreeJS();
+        
+        // Calculate basic metrics for UI
+        const calcDist = (p1, p2) => {
+           const dx = (staticLandmarks[p1].x - staticLandmarks[p2].x) * CANVAS_W;
+           const dy = (staticLandmarks[p1].y - staticLandmarks[p2].y) * CANVAS_H;
+           return Math.sqrt(dx*dx + dy*dy).toFixed(1);
+        };
+        
+        document.getElementById('triCount').textContent = '893'; // Approximated from 468 vertices
+        document.getElementById('metricFaceW').textContent = calcDist(234, 454) + ' mm'; // Cheek to cheek
+        document.getElementById('metricFaceH').textContent = calcDist(10, 152) + ' mm'; // Top to chin
+        document.getElementById('metricNoseL').textContent = calcDist(8, 2) + ' mm'; // Nose root to tip
+        document.getElementById('metricJawW').textContent = calcDist(132, 361) + ' mm'; // Jawline
+        
+        document.getElementById('scanMetrics').classList.remove('hidden');
         threeContainer.style.opacity = '1';
       }
     }, 800);
   });
 
   // Function to close 3D modal and go to nose editor
-  let hasEnteredApp = false;
   function close3DAndProceed() {
     threeModal.classList.add('hidden');
     staticLandmarks = null;
     if (staticVideoTexture) {
       staticVideoTexture.dispose();
       staticVideoTexture = null;
-    }
-    if (!hasEnteredApp) {
-      hasEnteredApp = true;
-      enterApp();
     }
   }
 

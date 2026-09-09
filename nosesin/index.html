@@ -388,7 +388,7 @@
               บันทึกรูปภาพ
             </button>
             <button class="btn" id="resetBtn">รีเซ็ตฟิลเตอร์</button>
-            <button class="btn" id="threeBtn" style="margin-top:10px; width:100%; border: 1px dashed var(--line); color: var(--muted);">ดูโครงหน้า 3D (GLB)</button>
+            
           </div>
           <p class="tool-note"><strong>หมายเหตุ:</strong> เป็นการจำลองภาพเพื่อการอ้างอิงเท่านั้น ไม่ใช่ผลลัพธ์ทางการแพทย์จริง ผลจริงขึ้นอยู่กับดุลยพินิจของแพทย์ผู้เชี่ยวชาญ</p>
         </div>
@@ -1428,10 +1428,6 @@
       document.getElementById('arNoseIcon').querySelector('path').setAttribute('d', NOSE_PATHS[info.noseKey]);
       document.getElementById('autoApplyBtn').dataset.preset = JSON.stringify(info.preset);
   });
-  
-})();
-
-    
 
   /* ---------- CUSTOM THREE.JS VIEWER LOGIC ---------- */
   const threeBtn = document.getElementById('threeBtn');
@@ -1617,6 +1613,7 @@
   });
 
 
+})();
 </script>
 </body>
 </html>

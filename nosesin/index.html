@@ -1561,8 +1561,9 @@ function updateThreeJS() {
         positions[i * 3 + 1] = y;
         positions[i * 3 + 2] = z;
 
-        let mappedX = window.currentSourceType === 'video' ? (1.0 - lm.x) : lm.x;
-        uvs[i * 2] = mappedX;
+                // Fix horizontal UV alignment. The staticCanvas draws the raw (unmirrored) video frame.
+        // Therefore, lm.x perfectly maps to the canvas texture without any flipping.
+        uvs[i * 2] = lm.x;
         uvs[i * 2 + 1] = 1.0 - lm.y;
     }
 
@@ -1608,6 +1609,7 @@ if(closeThreeBtn){
 </script>
 </body>
 </html>
+
 
 
 

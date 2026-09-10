@@ -254,46 +254,61 @@
     <button id="closeThreeBtn" style="background:rgba(255,255,255,0.05); border:1px solid #2e3436; color:#9a958c; font-size:20px; cursor:pointer; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">&times;</button>
   </div>
 
-  <!-- 3D Container -->
-  <div id="threeContainer" style="flex:1; position:relative; z-index:1;"></div>
+  <!-- Main 3D Area -->
+  <div style="flex:1; display:flex; overflow:hidden;">
+    
+    <!-- 3D Container -->
+    <div id="threeContainer" style="flex:1; position:relative; z-index:1;"></div>
 
-  <!-- Face ID Interactive overlay -->
-  <div id="faceIdOverlay" class="hidden" style="position:absolute; inset:0; top:65px; z-index:10002; background:#0d1012; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-    <h3 style="color:#e3c390; font-family:'IBM Plex Mono',monospace; letter-spacing:0.05em; margin-bottom:40px;">INITIALIZING 3D MESH...</h3>
-    <div style="position:relative; width:280px; height:280px; margin-bottom:30px;">
-      <!-- Circular live video feed -->
-      <canvas id="scanLiveCanvas" width="280" height="280" style="border-radius:50%; object-fit:cover; transform:scaleX(-1); box-shadow:0 0 30px rgba(111,174,138,0.15);"></canvas>
-      <!-- SVG Ring -->
-      <svg viewBox="0 0 140 140" style="position:absolute; top:0; left:0; width:100%; height:100%; transform:rotate(-90deg);">
-        <circle cx="70" cy="70" r="66" fill="none" stroke="#2e3436" stroke-width="4"/>
-        <circle id="faceIdRing" cx="70" cy="70" r="66" fill="none" stroke="#6fae8a" stroke-width="4" stroke-dasharray="414.7" stroke-dashoffset="414.7" stroke-linecap="round" style="transition: stroke-dashoffset 0.4s ease;"/>
-      </svg>
+    <!-- 3D Controls Sidebar -->
+    <div style="width: 340px; background: #14181a; border-left: 1px solid #2e3436; padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; z-index: 2;">
+      
+      <button id="toggleWireframeBtn" class="btn btn-outline" style="border-color:#6fae8a; color:#6fae8a; margin-bottom: 10px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:6px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        ซ่อนเส้นโครงตาข่าย (Wireframe)
+      </button>
+
+      <div style="color:#e3c390; font-size:12px; letter-spacing:0.1em; margin-bottom:4px; font-family:'IBM Plex Mono',monospace;">3D NOSE ADJUSTMENTS</div>
+
+      <div class="slider-row">
+        <div class="label-row"><span>ดั้ง/สันจมูก (Bridge)</span><span id="tBridgeVal" class="mono">0%</span></div>
+        <input type="range" id="tBridgeSlider" min="-100" max="100" value="0">
+      </div>
+      <div class="slider-row">
+        <div class="label-row"><span>ลดฮัมพ์/สโลป (Hump/Slope)</span><span id="tHumpVal" class="mono">0%</span></div>
+        <input type="range" id="tHumpSlider" min="-100" max="100" value="0">
+      </div>
+      <div class="slider-row">
+        <div class="label-row"><span>ความกว้างปีกจมูก (Alar Width)</span><span id="tAlarVal" class="mono">0%</span></div>
+        <input type="range" id="tAlarSlider" min="-100" max="100" value="0">
+      </div>
+      <div class="slider-row">
+        <div class="label-row"><span>ความกว้างสัน (Bridge Width)</span><span id="tWidthVal" class="mono">0%</span></div>
+        <input type="range" id="tWidthSlider" min="-100" max="100" value="0">
+      </div>
+      <div class="slider-row">
+        <div class="label-row"><span>ปลายจมูก (Tip Size)</span><span id="tTipVal" class="mono">0%</span></div>
+        <input type="range" id="tTipSlider" min="-100" max="100" value="0">
+      </div>
+      <div class="slider-row">
+        <div class="label-row"><span>องศาเชิด (Tip Rotation)</span><span id="tRotationVal" class="mono">0%</span></div>
+        <input type="range" id="tRotationSlider" min="-100" max="100" value="0">
+      </div>
+      <div class="slider-row">
+        <div class="label-row"><span>ความพุ่ง/แสงเงา (Projection)</span><span id="tProjVal" class="mono">0%</span></div>
+        <input type="range" id="tProjSlider" min="-100" max="100" value="0">
+      </div>
+
+      <button id="threeCaptureBtn" class="btn primary" style="margin-top: 10px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px; margin-right:4px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        บันทึกรูปภาพ 3D
+      </button>
+
+      <button id="proceedToEditorBtn" class="btn btn-outline" style="border-color:#2e3436; color:#9a958c;">
+        กลับไปมุมมอง 2D
+      </button>
+
     </div>
-    <div id="faceIdPrompt" style="font-size:20px; font-weight:bold; color:#f2ece2; text-align:center; height:80px; line-height:1.4;">
-      วางใบหน้าในกรอบ<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">และหันหน้าไปทางซ้ายช้าๆ</span>
-    </div>
-  </div>
-
-  <!-- Scan metrics overlay (top-left) -->
-  <div id="scanMetrics" class="hidden" style="position:absolute; top:70px; left:20px; z-index:10001; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#6fae8a; line-height:2; background:rgba(13,16,18,0.7); padding:14px 18px; border-radius:10px; border:1px solid rgba(111,174,138,0.2); backdrop-filter:blur(8px);">
-    <div style="color:#e3c390; font-size:11px; letter-spacing:0.1em; margin-bottom:6px;">FACE ANALYSIS</div>
-    <div>VERTICES: <span style="color:#f2ece2;">468</span></div>
-    <div>TRIANGLES: <span id="triCount" style="color:#f2ece2;">—</span></div>
-    <div>TEXTURE: <span style="color:#6fae8a;">MAPPED ✓</span></div>
-    <div>WIREFRAME: <span style="color:#6fae8a;">ON ✓</span></div>
-    <div style="margin-top:8px; color:#e3c390; font-size:11px; letter-spacing:0.1em;">MEASUREMENTS</div>
-    <div>FACE WIDTH: <span id="metricFaceW" style="color:#f2ece2;">—</span></div>
-    <div>FACE HEIGHT: <span id="metricFaceH" style="color:#f2ece2;">—</span></div>
-    <div>NOSE LENGTH: <span id="metricNoseL" style="color:#f2ece2;">—</span></div>
-    <div>JAW WIDTH: <span id="metricJawW" style="color:#f2ece2;">—</span></div>
-  </div>
-
-  <!-- Bottom bar -->
-  <div style="padding:16px 20px; display:flex; flex-direction:column; align-items:center; gap:12px; border-top:0.5px solid #2e3436; z-index:10001; background:#14181a;">
-    <div style="font-size:12px; color:#9a958c; font-family:'IBM Plex Mono',monospace;">DRAG TO ROTATE · SCROLL TO ZOOM · PINCH ON MOBILE</div>
-    <button id="proceedToEditorBtn" class="btn primary" style="width:100%; max-width:420px; padding:16px 24px; font-size:15px; letter-spacing:0.02em; border-radius:12px;">
-      ไปปรับรูปทรงจมูก →
-    </button>
   </div>
 </div>
 <style>
@@ -1485,8 +1500,8 @@
     const cw = threeContainer.clientWidth || window.innerWidth;
     const ch = threeContainer.clientHeight || window.innerHeight;
 
-    camera3D = new THREE.PerspectiveCamera(45, cw / ch, 0.1, 1000);
-    camera3D.position.set(0, 0, 450);
+    camera3D = new THREE.PerspectiveCamera(25, cw / ch, 0.1, 1000);
+    camera3D.position.set(0, 0, 700);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(cw, ch);
@@ -1581,12 +1596,74 @@
         }
         cx /= 468; cy /= 468; cz /= 468;
 
-        // Second pass: set positions centered around origin
+        // Second pass: set positions centered around origin and deform
+        const bAdj = parseInt(document.getElementById('tBridgeSlider').value, 10) / 100;
+        const wAdj = parseInt(document.getElementById('tWidthSlider').value, 10) / 100;
+        const tAdj = parseInt(document.getElementById('tTipSlider').value, 10) / 100;
+        const hAdj = parseInt(document.getElementById('tHumpSlider').value, 10) / 100;
+        const aAdj = parseInt(document.getElementById('tAlarSlider').value, 10) / 100;
+        const rAdj = parseInt(document.getElementById('tRotationSlider').value, 10) / 100;
+        const pAdj = parseInt(document.getElementById('tProjSlider').value, 10) / 100;
+
+        const noseTip = staticLandmarks[1];
+
         for (let i = 0; i < 468; i++) {
           const lm = staticLandmarks[i];
-          positions[i * 3]     =  (lm.x - cx) * scale;
-          positions[i * 3 + 1] = -(lm.y - cy) * scale;
-          positions[i * 3 + 2] = -(lm.z - cz) * scale;
+          
+          let dx = lm.x - cx;
+          let dy = lm.y - cy;
+          let dz = lm.z - cz;
+
+          // Make the face/jawline slightly wider
+          if (dy > 0) {
+             const jawWeight = Math.min(1.0, dy * 2.5);
+             dx *= (1 + 0.12 * jawWeight);
+          }
+
+          // Nose deformation
+          const nDx = lm.x - noseTip.x;
+          const nDy = lm.y - noseTip.y;
+          const nDz = lm.z - noseTip.z;
+          const distFromTip = Math.sqrt(nDx*nDx + nDy*nDy + nDz*nDz);
+
+          if (distFromTip < 0.1) {
+             const weight = Math.pow(Math.max(0, 1.0 - (distFromTip / 0.1)), 1.5);
+             
+             // Bridge / Projection (pull Z)
+             dz -= pAdj * 0.04 * weight;
+             dz -= bAdj * 0.02 * weight;
+             
+             // Tip Size
+             if (Math.abs(nDy) < 0.03) {
+                 dx *= (1 + tAdj * weight * 0.4);
+                 dy *= (1 - tAdj * weight * 0.4);
+             }
+             
+             // Alar Width
+             if (nDy > 0.01 && Math.abs(nDx) > 0.015) {
+                 dx += Math.sign(nDx) * aAdj * 0.025 * weight;
+             }
+             
+             // Tip Rotation
+             if (distFromTip < 0.06) {
+                 dy -= rAdj * 0.025 * weight;
+                 dz -= rAdj * 0.015 * weight;
+             }
+             
+             // Hump
+             if (nDy < -0.02 && nDy > -0.09 && Math.abs(nDx) < 0.03) {
+                 dz -= hAdj * 0.035 * weight;
+             }
+             
+             // Bridge Width
+             if (nDy < -0.02 && Math.abs(nDx) > 0.01) {
+                 dx += Math.sign(nDx) * wAdj * 0.02 * weight;
+             }
+          }
+
+          positions[i * 3]     =  dx * scale;
+          positions[i * 3 + 1] = -dy * scale;
+          positions[i * 3 + 2] = -dz * scale;
     
           uvs[i * 2] = 1.0 - lm.x; // FIXED: match the flipped canvas texture
           uvs[i * 2 + 1] = 1.0 - lm.y;
@@ -1747,6 +1824,52 @@
   closeThreeBtn.addEventListener('click', close3DAndProceed);
   document.getElementById('proceedToEditorBtn').addEventListener('click', close3DAndProceed);
 
+  // 3D Controls Listeners
+  const onThreeSliderChange = (e) => {
+    // Update value label
+    const id = e.target.id;
+    const val = parseInt(e.target.value, 10);
+    const labelId = id.replace('Slider', 'Val');
+    document.getElementById(labelId).textContent = val + '%';
+    
+    // Update 3D mesh
+    updateThreeJS();
+  };
+
+  ['tBridgeSlider', 'tHumpSlider', 'tAlarSlider', 'tWidthSlider', 'tTipSlider', 'tRotationSlider', 'tProjSlider'].forEach(id => {
+    document.getElementById(id).addEventListener('input', onThreeSliderChange);
+  });
+
+  document.getElementById('toggleWireframeBtn').addEventListener('click', () => {
+    if (wireframeMesh) {
+      wireframeMesh.visible = !wireframeMesh.visible;
+      document.getElementById('toggleWireframeBtn').innerHTML = wireframeMesh.visible 
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:6px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> ซ่อนเส้นโครงตาข่าย (Wireframe)`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:6px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> แสดงเส้นโครงตาข่าย (Wireframe)`;
+    }
+  });
+
+  document.getElementById('threeCaptureBtn').addEventListener('click', () => {
+    if (!renderer) return;
+    
+    // Create composite canvas to blend background and 3D mesh
+    const link = document.createElement('a');
+    const compCanvas = document.createElement('canvas');
+    compCanvas.width = renderer.domElement.width;
+    compCanvas.height = renderer.domElement.height;
+    const ctx = compCanvas.getContext('2d');
+    
+    // Fill background
+    ctx.fillStyle = '#0d1012';
+    ctx.fillRect(0, 0, compCanvas.width, compCanvas.height);
+    
+    // Draw 3D canvas on top
+    ctx.drawImage(renderer.domElement, 0, 0);
+    
+    link.download = 'nosesim_3d_capture_' + Date.now() + '.png';
+    link.href = compCanvas.toDataURL('image/png');
+    link.click();
+  });
 
 })();
 </script>

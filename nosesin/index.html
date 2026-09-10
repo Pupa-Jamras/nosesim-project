@@ -257,10 +257,21 @@
   <!-- 3D Container -->
   <div id="threeContainer" style="flex:1; position:relative; z-index:1;"></div>
 
-  <!-- Countdown overlay -->
-  <div id="countdownDiv" class="hidden" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:10002; text-align:center;">
-    <div id="countdownNumber" style="font-size:96px; font-weight:bold; color:#c99a5b; text-shadow:0 4px 20px rgba(201,154,91,0.4); font-family:'Fraunces',serif;">3</div>
-    <div id="countdownLabel" style="font-size:14px; color:#9a958c; font-family:'IBM Plex Mono',monospace; margin-top:8px;">กำลังสแกนโครงหน้า...</div>
+  <!-- Face ID Interactive overlay -->
+  <div id="faceIdOverlay" class="hidden" style="position:absolute; inset:0; top:65px; z-index:10002; background:#0d1012; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+    <h3 style="color:#e3c390; font-family:'IBM Plex Mono',monospace; letter-spacing:0.05em; margin-bottom:40px;">INITIALIZING 3D MESH...</h3>
+    <div style="position:relative; width:280px; height:280px; margin-bottom:30px;">
+      <!-- Circular live video feed -->
+      <canvas id="scanLiveCanvas" width="280" height="280" style="border-radius:50%; object-fit:cover; transform:scaleX(-1); box-shadow:0 0 30px rgba(111,174,138,0.15);"></canvas>
+      <!-- SVG Ring -->
+      <svg viewBox="0 0 140 140" style="position:absolute; top:0; left:0; width:100%; height:100%; transform:rotate(-90deg);">
+        <circle cx="70" cy="70" r="66" fill="none" stroke="#2e3436" stroke-width="4"/>
+        <circle id="faceIdRing" cx="70" cy="70" r="66" fill="none" stroke="#6fae8a" stroke-width="4" stroke-dasharray="414.7" stroke-dashoffset="414.7" stroke-linecap="round" style="transition: stroke-dashoffset 0.4s ease;"/>
+      </svg>
+    </div>
+    <div id="faceIdPrompt" style="font-size:20px; font-weight:bold; color:#f2ece2; text-align:center; height:80px; line-height:1.4;">
+      วางใบหน้าในกรอบ<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">และหันหน้าไปทางซ้ายช้าๆ</span>
+    </div>
   </div>
 
   <!-- Scan metrics overlay (top-left) -->
@@ -1600,12 +1611,85 @@
     }
   }
 
+  let faceIdReqId = null;
+
   function open3DScanModal() {
     if (!latestLandmarks) {
       alert('กรุณารอให้ระบบจับใบหน้าก่อนครับ');
       return;
     }
 
+    threeModal.classList.remove('hidden');
+    document.getElementById('faceIdOverlay').classList.remove('hidden');
+    threeContainer.style.opacity = '0';
+    document.getElementById('scanMetrics').classList.add('hidden');
+
+    const sCtx = document.getElementById('scanLiveCanvas').getContext('2d');
+    const ring = document.getElementById('faceIdRing');
+    const promptTitle = document.getElementById('faceIdPrompt');
+
+    let phase = 0; // 0: left, 1: right, 2: center, 3: countdown
+    let count = 3;
+    let lastTime = 0;
+
+    function loop(now) {
+      if (!threeModal || threeModal.classList.contains('hidden')) return;
+      if (document.getElementById('faceIdOverlay').classList.contains('hidden')) return;
+
+      faceIdReqId = requestAnimationFrame(loop);
+
+      // Draw live feed center crop
+      if (video.readyState >= 2) {
+        const minDim = Math.min(video.videoWidth, video.videoHeight);
+        const sx = (video.videoWidth - minDim) / 2;
+        const sy = (video.videoHeight - minDim) / 2;
+        sCtx.clearRect(0, 0, 280, 280);
+        sCtx.drawImage(video, sx, sy, minDim, minDim, 0, 0, 280, 280);
+      }
+
+      if (!latestLandmarks) return;
+      const p = i => latestLandmarks[i];
+      const nose = p(1), cheekL = p(234), cheekR = p(454);
+      const distL = Math.hypot(nose.x - cheekL.x, nose.y - cheekL.y);
+      const distR = Math.hypot(nose.x - cheekR.x, nose.y - cheekR.y);
+      let yaw = ((distR - distL) / ((distL + distR) || 1)) * 90;
+
+      if (phase === 0) {
+        promptTitle.innerHTML = 'เริ่มสแกนโครงหน้า 3D<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">หันหน้าไปทาง <span style="color:#e3c390">"ซ้าย"</span> ช้าๆ</span>';
+        ring.style.strokeDashoffset = 414.7 * 0.9;
+        if (yaw > 12) phase = 1;
+      } else if (phase === 1) {
+        promptTitle.innerHTML = 'เยี่ยมมาก!<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">คราวนี้หันไปทาง <span style="color:#e3c390">"ขวา"</span> ช้าๆ</span>';
+        ring.style.strokeDashoffset = 414.7 * 0.6;
+        if (yaw < -12) phase = 2;
+      } else if (phase === 2) {
+        promptTitle.innerHTML = 'เกือบเสร็จแล้ว<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">หันกลับมา <span style="color:#e3c390">"มองตรง"</span> เพื่อถ่ายโครงหน้า</span>';
+        ring.style.strokeDashoffset = 414.7 * 0.3;
+        if (Math.abs(yaw) < 6) {
+           phase = 3;
+           lastTime = now;
+           count = 3;
+        }
+      } else if (phase === 3) {
+        ring.style.strokeDashoffset = 0;
+        if (now - lastTime > 800) {
+          lastTime = now;
+          count--;
+        }
+        if (count > 0) {
+          promptTitle.innerHTML = `<span style="font-size:46px; color:#c99a5b; font-family:'Fraunces',serif;">${count}</span><br><span style="font-size:15px; color:#9a958c; font-weight:normal;">อยู่นิ่งๆ...</span>`;
+        } else if (count === 0) {
+          promptTitle.innerHTML = `<span style="font-size:46px; color:#6fae8a;">✓</span><br><span style="font-size:15px; color:#9a958c; font-weight:normal;">สแกน 3D สำเร็จ</span>`;
+          count = -1;
+          setTimeout(() => finishFaceIdScan(), 600);
+        }
+      }
+    }
+
+    faceIdReqId = requestAnimationFrame(loop);
+  }
+
+  function finishFaceIdScan() {
     staticLandmarks = JSON.parse(JSON.stringify(latestLandmarks));
     
     const snapCanvas = document.createElement('canvas');
@@ -1624,54 +1708,34 @@
       initThreeJS();
       threeInitialized = true;
     }
+    if (faceMesh3D) updateThreeJS();
     
-    threeModal.classList.remove('hidden');
-    threeContainer.style.opacity = '0';
-    document.getElementById('scanMetrics').classList.add('hidden');
-    countdownDiv.classList.remove('hidden');
+    // Calculate metrics
+    const calcDist = (p1, p2) => {
+       const dx = (staticLandmarks[p1].x - staticLandmarks[p2].x) * CANVAS_W;
+       const dy = (staticLandmarks[p1].y - staticLandmarks[p2].y) * CANVAS_H;
+       return Math.sqrt(dx*dx + dy*dy).toFixed(1);
+    };
     
-    const countdownNumber = document.getElementById('countdownNumber');
-    const countdownLabel = document.getElementById('countdownLabel');
-    countdownLabel.textContent = 'กำลังสแกนโครงหน้า...';
+    document.getElementById('triCount').textContent = '893';
+    document.getElementById('metricFaceW').textContent = calcDist(234, 454) + ' mm';
+    document.getElementById('metricFaceH').textContent = calcDist(10, 152) + ' mm';
+    document.getElementById('metricNoseL').textContent = calcDist(8, 2) + ' mm';
+    document.getElementById('metricJawW').textContent = calcDist(132, 361) + ' mm';
     
-    let count = 3;
-    countdownNumber.textContent = count;
-    
-    const timer = setInterval(() => {
-      count--;
-      if (count > 0) {
-        countdownNumber.textContent = count;
-      } else if (count === 0) {
-        countdownNumber.textContent = '✓';
-        countdownLabel.textContent = 'วิเคราะห์จุดตัด 468 จุดสำเร็จ';
-      } else {
-        clearInterval(timer);
-        countdownDiv.classList.add('hidden');
-        if (faceMesh3D) updateThreeJS();
-        
-        // Calculate basic metrics for UI
-        const calcDist = (p1, p2) => {
-           const dx = (staticLandmarks[p1].x - staticLandmarks[p2].x) * CANVAS_W;
-           const dy = (staticLandmarks[p1].y - staticLandmarks[p2].y) * CANVAS_H;
-           return Math.sqrt(dx*dx + dy*dy).toFixed(1);
-        };
-        
-        document.getElementById('triCount').textContent = '893'; // Approximated from 468 vertices
-        document.getElementById('metricFaceW').textContent = calcDist(234, 454) + ' mm'; // Cheek to cheek
-        document.getElementById('metricFaceH').textContent = calcDist(10, 152) + ' mm'; // Top to chin
-        document.getElementById('metricNoseL').textContent = calcDist(8, 2) + ' mm'; // Nose root to tip
-        document.getElementById('metricJawW').textContent = calcDist(132, 361) + ' mm'; // Jawline
-        
-        document.getElementById('scanMetrics').classList.remove('hidden');
-        threeContainer.style.opacity = '1';
-      }
-    }, 800);
+    document.getElementById('faceIdOverlay').classList.add('hidden');
+    document.getElementById('scanMetrics').classList.remove('hidden');
+    threeContainer.style.opacity = '1';
   }
 
   threeBtn.addEventListener('click', open3DScanModal);
 
   // Function to close 3D modal and go to nose editor
   function close3DAndProceed() {
+    if (faceIdReqId) {
+      cancelAnimationFrame(faceIdReqId);
+      faceIdReqId = null;
+    }
     threeModal.classList.add('hidden');
     staticLandmarks = null;
     if (staticVideoTexture) {

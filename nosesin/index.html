@@ -1006,7 +1006,7 @@
     state = 'success';
     setStatus('ยืนยันตัวตนสำเร็จ');
     scanCheck.classList.add('show');
-    setTimeout(open3DScanModal, 850);
+    setTimeout(enterApp, 850);
   }
 
   function enterApp(){
@@ -1671,17 +1671,12 @@
   threeBtn.addEventListener('click', open3DScanModal);
 
   // Function to close 3D modal and go to nose editor
-  let hasEnteredApp = false;
   function close3DAndProceed() {
     threeModal.classList.add('hidden');
     staticLandmarks = null;
     if (staticVideoTexture) {
       staticVideoTexture.dispose();
       staticVideoTexture = null;
-    }
-    if (!hasEnteredApp) {
-      hasEnteredApp = true;
-      enterApp();
     }
   }
 

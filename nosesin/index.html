@@ -1006,7 +1006,7 @@
     state = 'success';
     setStatus('ยืนยันตัวตนสำเร็จ');
     scanCheck.classList.add('show');
-    setTimeout(enterApp, 850);
+    setTimeout(open3DScanModal, 850);
   }
 
   function enterApp(){
@@ -1216,13 +1216,7 @@
   rotationSlider.addEventListener('input', onSliderChange);
   projectionSlider.addEventListener('input', onSliderChange);
 
-  // Skip login screen — go straight to app
-  loginScreen.classList.add('hidden');
-  appScreen.classList.remove('hidden');
-  if(!faceMesh) initFaceMesh();
-  liveFrame.insertBefore(canvas, camFallback);
-  state = 'filter';
-  startCamera();
+
 
   startScanBtn.addEventListener('click', () => {
     startScanBtn.classList.add('hidden');
@@ -1583,7 +1577,7 @@
           positions[i * 3 + 1] = -(lm.y - cy) * scale;
           positions[i * 3 + 2] = -(lm.z - cz) * scale;
     
-          uvs[i * 2] = lm.x;
+          uvs[i * 2] = 1.0 - lm.x; // FIXED: match the flipped canvas texture
           uvs[i * 2 + 1] = 1.0 - lm.y;
         }
         geometry.attributes.position.needsUpdate = true;
@@ -1606,7 +1600,7 @@
     }
   }
 
-  threeBtn.addEventListener('click', () => {
+  function open3DScanModal() {
     if (!latestLandmarks) {
       alert('กรุณารอให้ระบบจับใบหน้าก่อนครับ');
       return;
@@ -1615,8 +1609,8 @@
     staticLandmarks = JSON.parse(JSON.stringify(latestLandmarks));
     
     const snapCanvas = document.createElement('canvas');
-    snapCanvas.width = video.videoWidth;
-    snapCanvas.height = video.videoHeight;
+    snapCanvas.width = video.videoWidth || CANVAS_W;
+    snapCanvas.height = video.videoHeight || CANVAS_H;
     const snapCtx = snapCanvas.getContext('2d');
     
     snapCtx.translate(snapCanvas.width, 0);
@@ -1672,15 +1666,22 @@
         threeContainer.style.opacity = '1';
       }
     }, 800);
-  });
+  }
+
+  threeBtn.addEventListener('click', open3DScanModal);
 
   // Function to close 3D modal and go to nose editor
+  let hasEnteredApp = false;
   function close3DAndProceed() {
     threeModal.classList.add('hidden');
     staticLandmarks = null;
     if (staticVideoTexture) {
       staticVideoTexture.dispose();
       staticVideoTexture = null;
+    }
+    if (!hasEnteredApp) {
+      hasEnteredApp = true;
+      enterApp();
     }
   }
 

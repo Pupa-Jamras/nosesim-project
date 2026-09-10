@@ -260,6 +260,35 @@
     <!-- 3D Container -->
     <div id="threeContainer" style="flex:1; position:relative; z-index:1;"></div>
 
+    <!-- Face ID Interactive overlay -->
+    <div id="faceIdOverlay" class="hidden" style="position:absolute; inset:0; top:65px; z-index:10002; background:#0d1012; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+      <h3 style="color:#e3c390; font-family:'IBM Plex Mono',monospace; letter-spacing:0.05em; margin-bottom:40px;">INITIALIZING 3D MESH...</h3>
+      <div style="position:relative; width:280px; height:280px; margin-bottom:30px;">
+        <canvas id="scanLiveCanvas" width="280" height="280" style="border-radius:50%; object-fit:cover; transform:scaleX(-1); box-shadow:0 0 30px rgba(111,174,138,0.15);"></canvas>
+        <svg viewBox="0 0 140 140" style="position:absolute; top:0; left:0; width:100%; height:100%; transform:rotate(-90deg);">
+          <circle cx="70" cy="70" r="66" fill="none" stroke="#2e3436" stroke-width="4"/>
+          <circle id="faceIdRing" cx="70" cy="70" r="66" fill="none" stroke="#6fae8a" stroke-width="4" stroke-dasharray="414.7" stroke-dashoffset="414.7" stroke-linecap="round" style="transition: stroke-dashoffset 0.4s ease;"/>
+        </svg>
+      </div>
+      <div id="faceIdPrompt" style="font-size:20px; font-weight:bold; color:#f2ece2; text-align:center; height:80px; line-height:1.4;">
+        วางใบหน้าในกรอบ<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">และหันหน้าไปทางซ้ายช้าๆ</span>
+      </div>
+    </div>
+
+    <!-- Scan metrics overlay (top-left) -->
+    <div id="scanMetrics" class="hidden" style="position:absolute; top:80px; left:20px; z-index:10001; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#6fae8a; line-height:2; background:rgba(13,16,18,0.7); padding:14px 18px; border-radius:10px; border:1px solid rgba(111,174,138,0.2); backdrop-filter:blur(8px);">
+      <div style="color:#e3c390; font-size:11px; letter-spacing:0.1em; margin-bottom:6px;">FACE ANALYSIS</div>
+      <div>VERTICES: <span style="color:#f2ece2;">468</span></div>
+      <div>TRIANGLES: <span id="triCount" style="color:#f2ece2;">—</span></div>
+      <div>TEXTURE: <span style="color:#6fae8a;">MAPPED ✓</span></div>
+      <div>WIREFRAME: <span style="color:#6fae8a;">ON ✓</span></div>
+      <div style="margin-top:8px; color:#e3c390; font-size:11px; letter-spacing:0.1em;">MEASUREMENTS</div>
+      <div>FACE WIDTH: <span id="metricFaceW" style="color:#f2ece2;">—</span></div>
+      <div>FACE HEIGHT: <span id="metricFaceH" style="color:#f2ece2;">—</span></div>
+      <div>NOSE LENGTH: <span id="metricNoseL" style="color:#f2ece2;">—</span></div>
+      <div>JAW WIDTH: <span id="metricJawW" style="color:#f2ece2;">—</span></div>
+    </div>
+
     <!-- 3D Controls Sidebar -->
     <div style="width: 340px; background: #14181a; border-left: 1px solid #2e3436; padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; z-index: 2;">
       
@@ -304,7 +333,12 @@
         บันทึกรูปภาพ 3D
       </button>
 
-      <button id="proceedToEditorBtn" class="btn btn-outline" style="border-color:#2e3436; color:#9a958c;">
+      <button id="threeCompareBtn" class="btn btn-outline" style="border-color:#c99a5b; color:#c99a5b;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px; margin-right:4px;"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        กดค้างเพื่อดูต้นฉบับ (Before)
+      </button>
+
+      <button id="proceedToEditorBtn" class="btn btn-outline" style="border-color:#2e3436; color:#9a958c; margin-top: auto;">
         กลับไปมุมมอง 2D
       </button>
 
@@ -1597,13 +1631,14 @@
         cx /= 468; cy /= 468; cz /= 468;
 
         // Second pass: set positions centered around origin and deform
-        const bAdj = parseInt(document.getElementById('tBridgeSlider').value, 10) / 100;
-        const wAdj = parseInt(document.getElementById('tWidthSlider').value, 10) / 100;
-        const tAdj = parseInt(document.getElementById('tTipSlider').value, 10) / 100;
-        const hAdj = parseInt(document.getElementById('tHumpSlider').value, 10) / 100;
-        const aAdj = parseInt(document.getElementById('tAlarSlider').value, 10) / 100;
-        const rAdj = parseInt(document.getElementById('tRotationSlider').value, 10) / 100;
-        const pAdj = parseInt(document.getElementById('tProjSlider').value, 10) / 100;
+        const isComp = window.isComparing3D === true;
+        const bAdj = isComp ? 0 : parseInt(document.getElementById('tBridgeSlider').value, 10) / 100;
+        const wAdj = isComp ? 0 : parseInt(document.getElementById('tWidthSlider').value, 10) / 100;
+        const tAdj = isComp ? 0 : parseInt(document.getElementById('tTipSlider').value, 10) / 100;
+        const hAdj = isComp ? 0 : parseInt(document.getElementById('tHumpSlider').value, 10) / 100;
+        const aAdj = isComp ? 0 : parseInt(document.getElementById('tAlarSlider').value, 10) / 100;
+        const rAdj = isComp ? 0 : parseInt(document.getElementById('tRotationSlider').value, 10) / 100;
+        const pAdj = isComp ? 0 : parseInt(document.getElementById('tProjSlider').value, 10) / 100;
 
         const noseTip = staticLandmarks[1];
 
@@ -1870,6 +1905,18 @@
     link.href = compCanvas.toDataURL('image/png');
     link.click();
   });
+
+  // 3D Compare Button
+  window.isComparing3D = false;
+  const threeCompareBtn = document.getElementById('threeCompareBtn');
+  const startCompare3D = (e) => { e.preventDefault(); window.isComparing3D = true; updateThreeJS(); };
+  const stopCompare3D = (e) => { e.preventDefault(); window.isComparing3D = false; updateThreeJS(); };
+  
+  threeCompareBtn.addEventListener('mousedown', startCompare3D);
+  threeCompareBtn.addEventListener('mouseup', stopCompare3D);
+  threeCompareBtn.addEventListener('mouseleave', stopCompare3D);
+  threeCompareBtn.addEventListener('touchstart', startCompare3D);
+  threeCompareBtn.addEventListener('touchend', stopCompare3D);
 
 })();
 </script>

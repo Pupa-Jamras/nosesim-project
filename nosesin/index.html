@@ -299,6 +299,10 @@
 
       <div style="color:#e3c390; font-size:12px; letter-spacing:0.1em; margin-bottom:4px; font-family:'IBM Plex Mono',monospace;">3D NOSE ADJUSTMENTS</div>
 
+      <button id="threeAiBtn" class="btn btn-outline" style="border-color:#6fae8a; color:#6fae8a; margin-bottom: 8px;">
+        ✨ AI วิเคราะห์ & ปรับทรงจมูกอัตโนมัติ
+      </button>
+
       <div class="slider-row">
         <div class="label-row"><span>ดั้ง/สันจมูก (Bridge)</span><span id="tBridgeVal" class="mono">0%</span></div>
         <input type="range" id="tBridgeSlider" min="-100" max="100" value="0">
@@ -1537,7 +1541,7 @@
     camera3D = new THREE.PerspectiveCamera(25, cw / ch, 0.1, 1000);
     camera3D.position.set(0, 0, 700);
 
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     renderer.setSize(cw, ch);
     renderer.setPixelRatio(window.devicePixelRatio);
     threeContainer.appendChild(renderer.domElement);
@@ -1647,12 +1651,31 @@
           
           let dx = lm.x - cx;
           let dy = lm.y - cy;
-          let dz = lm.z - cz;
+          let dz = (lm.z - cz) * 1.6; // Boost Z depth for much more realistic facial volume
 
-          // Make the face/jawline slightly wider
+          // Make the face/jawline wider and simulate a fuller head (extrapolate edges)
+          // Find distance from center (XY plane)
+          const distFromCenter = Math.sqrt(dx*dx + dy*dy);
+          
+          if (distFromCenter > 0.15) {
+             // Outer regions (cheeks, forehead, jaw). Push them back and outward to form a "head" shape
+             const edgeWeight = Math.min(1.0, (distFromCenter - 0.15) * 5.0);
+             dx *= (1 + 0.3 * edgeWeight); // Widen significantly
+             dy *= (1 + 0.2 * edgeWeight); // Lengthen slightly (forehead/chin)
+             dz -= 0.15 * edgeWeight; // Push back to curve around the head
+             
+             // Extra neck simulation for the bottom area
+             if (dy > 0.1) {
+                 const neckWeight = Math.min(1.0, (dy - 0.1) * 4.0);
+                 dy *= (1 + 0.3 * neckWeight); // Pull down to form neck
+                 dz -= 0.1 * neckWeight;
+             }
+          }
+
+          // Make the lower jaw slightly wider naturally
           if (dy > 0) {
              const jawWeight = Math.min(1.0, dy * 2.5);
-             dx *= (1 + 0.12 * jawWeight);
+             dx *= (1 + 0.08 * jawWeight);
           }
 
           // Nose deformation
@@ -1873,6 +1896,50 @@
 
   ['tBridgeSlider', 'tHumpSlider', 'tAlarSlider', 'tWidthSlider', 'tTipSlider', 'tRotationSlider', 'tProjSlider'].forEach(id => {
     document.getElementById(id).addEventListener('input', onThreeSliderChange);
+  });
+
+  document.getElementById('threeAiBtn').addEventListener('click', () => {
+    if (!staticLandmarks) return;
+    
+    const p = i => staticLandmarks[i];
+    // Calculate face metrics (width/height ratio)
+    const faceW = Math.hypot(p(234).x - p(454).x, p(234).y - p(454).y);
+    const faceH = Math.hypot(p(10).x - p(152).x, p(10).y - p(152).y);
+    const ratio = faceW / faceH;
+    
+    // Simple AI heuristic based on face shape
+    let preset = [0, 0, 0, 0, 0, 0, 0];
+    // Show toast notification
+    let toast = document.getElementById('aiToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'aiToast';
+      toast.style.cssText = 'position:absolute; top:80px; right:360px; z-index:10005; background:rgba(111,174,138,0.15); border:1px solid #6fae8a; color:#f2ece2; padding:16px 20px; border-radius:12px; font-family:"IBM Plex Mono",monospace; font-size:13px; backdrop-filter:blur(10px); transition:opacity 0.3s; opacity:0;';
+      document.getElementById('threeModal').appendChild(toast);
+    }
+    
+    if (ratio > 0.75) {
+      preset = [35, 10, -20, -15, -10, 5, 25];
+      toast.innerHTML = '<strong style="color:#6fae8a;">✨ AI วิเคราะห์: ใบหน้าทรงกว้าง</strong><br><span style="color:#9a958c; font-size:11px;">ระบบปรับสันให้คมชัดและปีกจมูกเรียวขึ้นเพื่อสร้างมิติ</span>';
+    } else if (ratio < 0.65) {
+      preset = [15, -10, 10, 5, 10, 15, 15];
+      toast.innerHTML = '<strong style="color:#6fae8a;">✨ AI วิเคราะห์: ใบหน้าทรงยาว</strong><br><span style="color:#9a958c; font-size:11px;">ระบบปรับปลายให้เชิดขึ้นเล็กน้อย สร้างความสมดุลให้ใบหน้า</span>';
+    } else {
+      preset = [25, 5, -10, -5, -5, 10, 20];
+      toast.innerHTML = '<strong style="color:#6fae8a;">✨ AI วิเคราะห์: ใบหน้าทรงรูปไข่ (สมมาตร)</strong><br><span style="color:#9a958c; font-size:11px;">ระบบปรับทรงหยดน้ำมาตรฐาน (Golden Ratio) ที่เข้ากับรูปหน้า</span>';
+    }
+    
+    toast.style.opacity = '1';
+    setTimeout(() => { toast.style.opacity = '0'; }, 4000);
+
+    const sliders = ['tBridge', 'tHump', 'tAlar', 'tWidth', 'tTip', 'tRotation', 'tProj'];
+    sliders.forEach((id, index) => {
+      const slider = document.getElementById(id + 'Slider');
+      slider.value = preset[index];
+      document.getElementById(id + 'Val').textContent = preset[index] + '%';
+    });
+    
+    updateThreeJS();
   });
 
   document.getElementById('toggleWireframeBtn').addEventListener('click', () => {

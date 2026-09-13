@@ -1616,13 +1616,14 @@
     animateThreeJS();
   }
 
-  function updateThreeJS() {
-    if (!faceMesh3D || !staticLandmarks) return;
+    function updateThreeJS() {
+    if (!faceMesh3D || !staticLandmarks || !staticVideoTexture) return;
     const geometry = faceMesh3D.geometry;
     const positions = geometry.attributes.position.array;
     const uvs = geometry.attributes.uv.array;
 
     const scale = 400;
+    const imgAspect = staticVideoTexture.image.height / staticVideoTexture.image.width;
 
     // We assume the GLB has exactly 468 vertices mapping to FaceMesh.
     if (positions.length / 3 === 468) {
@@ -1650,37 +1651,12 @@
           const lm = staticLandmarks[i];
           
           let dx = lm.x - cx;
-          let dy = lm.y - cy;
-          let dz = (lm.z - cz) * 1.6; // Boost Z depth for much more realistic facial volume
-
-          // Make the face/jawline wider and simulate a fuller head (extrapolate edges)
-          // Find distance from center (XY plane)
-          const distFromCenter = Math.sqrt(dx*dx + dy*dy);
-          
-          if (distFromCenter > 0.15) {
-             // Outer regions (cheeks, forehead, jaw). Push them back and outward to form a "head" shape
-             const edgeWeight = Math.min(1.0, (distFromCenter - 0.15) * 5.0);
-             dx *= (1 + 0.3 * edgeWeight); // Widen significantly
-             dy *= (1 + 0.2 * edgeWeight); // Lengthen slightly (forehead/chin)
-             dz -= 0.15 * edgeWeight; // Push back to curve around the head
-             
-             // Extra neck simulation for the bottom area
-             if (dy > 0.1) {
-                 const neckWeight = Math.min(1.0, (dy - 0.1) * 4.0);
-                 dy *= (1 + 0.3 * neckWeight); // Pull down to form neck
-                 dz -= 0.1 * neckWeight;
-             }
-          }
-
-          // Make the lower jaw slightly wider naturally
-          if (dy > 0) {
-             const jawWeight = Math.min(1.0, dy * 2.5);
-             dx *= (1 + 0.08 * jawWeight);
-          }
+          let dy = (lm.y - cy) * imgAspect; // Fix aspect ratio distortion!
+          let dz = (lm.z - cz) * 1.4; // Realistic Z depth boost without distortion
 
           // Nose deformation
           const nDx = lm.x - noseTip.x;
-          const nDy = lm.y - noseTip.y;
+          const nDy = (lm.y - noseTip.y) * imgAspect;
           const nDz = lm.z - noseTip.z;
           const distFromTip = Math.sqrt(nDx*nDx + nDy*nDy + nDz*nDz);
 
@@ -1723,7 +1699,7 @@
           positions[i * 3 + 1] = -dy * scale;
           positions[i * 3 + 2] = -dz * scale;
     
-          uvs[i * 2] = 1.0 - lm.x; // FIXED: match the flipped canvas texture
+          uvs[i * 2] = 1.0 - lm.x; 
           uvs[i * 2 + 1] = 1.0 - lm.y;
         }
         geometry.attributes.position.needsUpdate = true;
@@ -1843,6 +1819,47 @@
       initThreeJS();
       threeInitialized = true;
     }
+    
+    // Add or update background plane to show hair/neck realistically
+    const aspect = snapCanvas.height / snapCanvas.width;
+    const bgW = 400; // Based on scale=400 in updateThreeJS
+    const bgH = 400 * aspect;
+    
+    if (!window.bgPlaneMesh) {
+       const planeGeo = new THREE.PlaneGeometry(bgW, bgH);
+       // Flip UVs horizontally to match the face texture mapping
+       const pUvs = planeGeo.attributes.uv.array;
+       for(let i=0; i<pUvs.length; i+=2) pUvs[i] = 1.0 - pUvs[i];
+       
+       const planeMat = new THREE.MeshBasicMaterial({ 
+           color: 0xffffff, side: THREE.DoubleSide 
+       });
+       window.bgPlaneMesh = new THREE.Mesh(planeGeo, planeMat);
+       scene.add(window.bgPlaneMesh);
+    }
+    
+    window.bgPlaneMesh.material.map = staticVideoTexture;
+    window.bgPlaneMesh.material.needsUpdate = true;
+    
+    // Align plane with face mesh centroid
+    let cx = 0, cy = 0;
+    for (let i = 0; i < 468; i++) {
+        cx += staticLandmarks[i].x; 
+        cy += staticLandmarks[i].y;
+    }
+    cx /= 468; cy /= 468;
+    
+    // Position plane so the face aligns exactly with the 3D face mesh
+    window.bgPlaneMesh.position.x = (0.5 - cx) * 400;
+    window.bgPlaneMesh.position.y = -(0.5 - cy) * 400 * aspect; // Fix offset with aspect ratio
+    
+    // Push the plane back behind the deepest point of the face
+    const pZ = -40; // Safely behind the face
+    window.bgPlaneMesh.position.z = pZ;
+    // Scale up slightly to compensate for perspective distance (Camera is at Z=700)
+    const s = (700 - pZ) / 700;
+    window.bgPlaneMesh.scale.set(s, s, 1);
+
     if (faceMesh3D) updateThreeJS();
     
     // Calculate metrics

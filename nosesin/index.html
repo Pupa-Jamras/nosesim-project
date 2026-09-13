@@ -1652,7 +1652,7 @@
           
           let dx = lm.x - cx;
           let dy = (lm.y - cy) * imgAspect; // Fix aspect ratio distortion!
-          let dz = (lm.z - cz) * 1.4; // Realistic Z depth boost without distortion
+          let dz = (lm.z - cz) * 1.0; // Removed artificial depth boost (was 1.4) to match true facial proportions
 
           // Nose deformation
           const nDx = lm.x - noseTip.x;
@@ -1739,6 +1739,7 @@
     const ring = document.getElementById('faceIdRing');
     const promptTitle = document.getElementById('faceIdPrompt');
 
+    // Video recording logic removed (Option B: Fast MediaPipe path)
     let phase = 0; // 0: left, 1: right, 2: center, 3: countdown
     let count = 3;
     let lastTime = 0;
@@ -1768,11 +1769,11 @@
       if (phase === 0) {
         promptTitle.innerHTML = 'เริ่มสแกนโครงหน้า 3D<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">หันหน้าไปทาง <span style="color:#e3c390">"ซ้าย"</span> ช้าๆ</span>';
         ring.style.strokeDashoffset = 414.7 * 0.9;
-        if (yaw > 12) phase = 1;
+        if (yaw < -12) phase = 1; // Swapped to fix mirrored detection
       } else if (phase === 1) {
         promptTitle.innerHTML = 'เยี่ยมมาก!<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">คราวนี้หันไปทาง <span style="color:#e3c390">"ขวา"</span> ช้าๆ</span>';
         ring.style.strokeDashoffset = 414.7 * 0.6;
-        if (yaw < -12) phase = 2;
+        if (yaw > 12) phase = 2; // Swapped to fix mirrored detection
       } else if (phase === 2) {
         promptTitle.innerHTML = 'เกือบเสร็จแล้ว<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">หันกลับมา <span style="color:#e3c390">"มองตรง"</span> เพื่อถ่ายโครงหน้า</span>';
         ring.style.strokeDashoffset = 414.7 * 0.3;
@@ -1790,9 +1791,14 @@
         if (count > 0) {
           promptTitle.innerHTML = `<span style="font-size:46px; color:#c99a5b; font-family:'Fraunces',serif;">${count}</span><br><span style="font-size:15px; color:#9a958c; font-weight:normal;">อยู่นิ่งๆ...</span>`;
         } else if (count === 0) {
-          promptTitle.innerHTML = `<span style="font-size:46px; color:#6fae8a;">✓</span><br><span style="font-size:15px; color:#9a958c; font-weight:normal;">สแกน 3D สำเร็จ</span>`;
           count = -1;
-          setTimeout(() => finishFaceIdScan(), 600);
+          
+          promptTitle.innerHTML = `<div class="w-10 h-10 border-4 border-[#6fae8a] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div><span style="font-size:15px; color:#6fae8a; font-weight:bold;">กำลังสร้างโครงหน้า 3 มิติ...</span>`;
+          
+          // Brief artificial delay for a polished UX feel
+          setTimeout(() => {
+              finishFaceIdScan();
+          }, 1200);
         }
       }
     }
@@ -1820,113 +1826,12 @@
       threeInitialized = true;
     }
     
-    // Add or update background plane to show hair/neck realistically
-    const aspect = snapCanvas.height / snapCanvas.width;
-    const bgW = 400; // Based on scale=400 in updateThreeJS
-    const bgH = 400 * aspect;
-    
-    // Align plane with face mesh centroid (needed early for mask)
-    let cx = 0, cy = 0;
-    for (let i = 0; i < 468; i++) {
-        cx += staticLandmarks[i].x; 
-        cy += staticLandmarks[i].y;
-    }
-    cx /= 468; cy /= 468;
-
-    // Create Alpha Mask to hide background/shoulders (show only head + half neck)
-    const maskCanvas = document.createElement('canvas');
-    maskCanvas.width = snapCanvas.width;
-    maskCanvas.height = snapCanvas.height;
-    const maskCtx = maskCanvas.getContext('2d');
-    
-    // Black background = fully transparent
-    maskCtx.fillStyle = '#000000';
-    maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
-    
-    const p = i => staticLandmarks[i];
-    const faceW = Math.abs(p(454).x - p(234).x) * maskCanvas.width;
-    const faceH = Math.abs(p(152).y - p(10).y) * maskCanvas.height;
-    
-    // In maskCanvas, X is flipped because staticVideoTexture is flipped. 
-    // So cx is actually 1.0 - cx in the raw canvas?
-    // Wait, staticVideoTexture is made from snapCanvas. snapCanvas IS horizontally mirrored via ctx.scale(-1, 1).
-    // The bgPlaneMesh UVs are ALSO flipped. 
-    // If maskCanvas is used directly as alphaMap, it will be mapped using the same UVs!
-    // So we just draw it matching the snapCanvas coordinate space.
-    // However, the landmarks were acquired BEFORE snapCanvas flipping, so they match the mirrored canvas perfectly (lm.x is already mirrored from the user's perspective, wait no. MediaPipe x=0 is left of screen).
-    // Actually, in updateThreeJS we use uvs[i*2] = 1.0 - lm.x. This implies lm.x = 1 is the right side of the image texture.
-    // Let's just draw the mask in the center of the image at (cx * W, cy * H) but flipped X.
-    const maskCx = (1.0 - cx) * maskCanvas.width; 
-    const maskCy = cy * maskCanvas.height;
-    
-    const grad = maskCtx.createRadialGradient(maskCx, maskCy, faceW*0.3, maskCx, maskCy, faceH*0.75);
-    grad.addColorStop(0, '#ffffff'); // Opaque center (face)
-    grad.addColorStop(0.6, '#ffffff'); // Opaque out to hair/neck
-    grad.addColorStop(1, '#000000'); // Smooth fade out
-    
-    maskCtx.fillStyle = grad;
-    maskCtx.beginPath();
-    // Ellipse covering hair (top) and half neck (bottom), excluding shoulders
-    maskCtx.ellipse(maskCx, maskCy + faceH * 0.05, faceW * 0.65, faceH * 0.75, 0, 0, 2 * Math.PI);
-    maskCtx.fill();
-    
-    const maskTex = new THREE.CanvasTexture(maskCanvas);
-
     if (window.bgPlaneMesh) {
        scene.remove(window.bgPlaneMesh);
        window.bgPlaneMesh.geometry.dispose();
        window.bgPlaneMesh.material.dispose();
        window.bgPlaneMesh = null;
     }
-
-    // Create a Dome geometry (a curved plane) so the head looks solid 3D instead of flat
-    const planeGeo = new THREE.PlaneGeometry(bgW, bgH, 40, 40);
-    const pUvs = planeGeo.attributes.uv.array;
-    for(let i=0; i<pUvs.length; i+=2) pUvs[i] = 1.0 - pUvs[i];
-    
-    const pos = planeGeo.attributes.position;
-    const a = bgW / 2;
-    const b = bgH / 2;
-    const depth = 90; // How far back the neck/hair curve (solid head effect)
-    const cameraZ = 700;
-    const pZ = -10; // Base Z offset to merge seamlessly with face mesh cheeks
-    
-    for (let i = 0; i < pos.count; i++) {
-        let x = pos.getX(i);
-        let y = pos.getY(i);
-        
-        // Normalize
-        let nx = x / a;
-        let ny = y / b;
-        
-        // Curve backwards to form a head dome
-        let r2 = nx*nx + ny*ny;
-        let zOffset = -depth * Math.pow(r2, 0.8);
-        pos.setZ(i, zOffset);
-        
-        // Perspective correction so texture still perfectly matches the 2D photo from front
-        let absZ = pZ + zOffset;
-        let correction = (cameraZ - absZ) / cameraZ;
-        pos.setX(i, x * correction);
-        pos.setY(i, y * correction);
-    }
-    planeGeo.computeVertexNormals();
-    
-    const planeMat = new THREE.MeshBasicMaterial({ 
-        color: 0xffffff, 
-        side: THREE.DoubleSide,
-        transparent: true,
-        map: staticVideoTexture,
-        alphaMap: maskTex
-    });
-    window.bgPlaneMesh = new THREE.Mesh(planeGeo, planeMat);
-    scene.add(window.bgPlaneMesh);
-    
-    // Position the dome
-    const baseCorrection = (cameraZ - pZ) / cameraZ;
-    window.bgPlaneMesh.position.x = (0.5 - cx) * 400 * baseCorrection;
-    window.bgPlaneMesh.position.y = -(0.5 - cy) * 400 * aspect * baseCorrection;
-    window.bgPlaneMesh.position.z = pZ;
 
     if (faceMesh3D) updateThreeJS();
     

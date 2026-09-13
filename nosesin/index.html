@@ -1872,35 +1872,61 @@
     
     const maskTex = new THREE.CanvasTexture(maskCanvas);
 
-    if (!window.bgPlaneMesh) {
-       const planeGeo = new THREE.PlaneGeometry(bgW, bgH);
-       // Flip UVs horizontally to match the face texture mapping
-       const pUvs = planeGeo.attributes.uv.array;
-       for(let i=0; i<pUvs.length; i+=2) pUvs[i] = 1.0 - pUvs[i];
-       
-       const planeMat = new THREE.MeshBasicMaterial({ 
-           color: 0xffffff, 
-           side: THREE.DoubleSide,
-           transparent: true
-       });
-       window.bgPlaneMesh = new THREE.Mesh(planeGeo, planeMat);
-       scene.add(window.bgPlaneMesh);
+    if (window.bgPlaneMesh) {
+       scene.remove(window.bgPlaneMesh);
+       window.bgPlaneMesh.geometry.dispose();
+       window.bgPlaneMesh.material.dispose();
+       window.bgPlaneMesh = null;
     }
+
+    // Create a Dome geometry (a curved plane) so the head looks solid 3D instead of flat
+    const planeGeo = new THREE.PlaneGeometry(bgW, bgH, 40, 40);
+    const pUvs = planeGeo.attributes.uv.array;
+    for(let i=0; i<pUvs.length; i+=2) pUvs[i] = 1.0 - pUvs[i];
     
-    window.bgPlaneMesh.material.map = staticVideoTexture;
-    window.bgPlaneMesh.material.alphaMap = maskTex;
-    window.bgPlaneMesh.material.needsUpdate = true;
+    const pos = planeGeo.attributes.position;
+    const a = bgW / 2;
+    const b = bgH / 2;
+    const depth = 90; // How far back the neck/hair curve (solid head effect)
+    const cameraZ = 700;
+    const pZ = -10; // Base Z offset to merge seamlessly with face mesh cheeks
     
-    // Position plane so the face aligns exactly with the 3D face mesh
-    window.bgPlaneMesh.position.x = (0.5 - cx) * 400;
-    window.bgPlaneMesh.position.y = -(0.5 - cy) * 400 * aspect; // Fix offset with aspect ratio
+    for (let i = 0; i < pos.count; i++) {
+        let x = pos.getX(i);
+        let y = pos.getY(i);
+        
+        // Normalize
+        let nx = x / a;
+        let ny = y / b;
+        
+        // Curve backwards to form a head dome
+        let r2 = nx*nx + ny*ny;
+        let zOffset = -depth * Math.pow(r2, 0.8);
+        pos.setZ(i, zOffset);
+        
+        // Perspective correction so texture still perfectly matches the 2D photo from front
+        let absZ = pZ + zOffset;
+        let correction = (cameraZ - absZ) / cameraZ;
+        pos.setX(i, x * correction);
+        pos.setY(i, y * correction);
+    }
+    planeGeo.computeVertexNormals();
     
-    // Push the plane back behind the deepest point of the face
-    const pZ = -40; // Safely behind the face
+    const planeMat = new THREE.MeshBasicMaterial({ 
+        color: 0xffffff, 
+        side: THREE.DoubleSide,
+        transparent: true,
+        map: staticVideoTexture,
+        alphaMap: maskTex
+    });
+    window.bgPlaneMesh = new THREE.Mesh(planeGeo, planeMat);
+    scene.add(window.bgPlaneMesh);
+    
+    // Position the dome
+    const baseCorrection = (cameraZ - pZ) / cameraZ;
+    window.bgPlaneMesh.position.x = (0.5 - cx) * 400 * baseCorrection;
+    window.bgPlaneMesh.position.y = -(0.5 - cy) * 400 * aspect * baseCorrection;
     window.bgPlaneMesh.position.z = pZ;
-    // Scale up slightly to compensate for perspective distance (Camera is at Z=700)
-    const s = (700 - pZ) / 700;
-    window.bgPlaneMesh.scale.set(s, s, 1);
 
     if (faceMesh3D) updateThreeJS();
     

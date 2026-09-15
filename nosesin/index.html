@@ -281,9 +281,13 @@
       <h3 id="faceIdOverlayTitle" style="color:#e3c390; font-family:'IBM Plex Mono',monospace; letter-spacing:0.05em; margin-bottom:15px; font-size:14px;">1. เลือกกรอบใบหน้าของคุณ</h3>
       
       <!-- Shape Selector -->
-      <div id="shapeSelectorWrapper" style="display:flex; gap:8px; max-width:90%; overflow-x:auto; margin-bottom:20px; padding:4px 0; scrollbar-width:none; -webkit-overflow-scrolling: touch;">
+      <div id="shapeSelectorWrapper" style="display:flex; gap:8px; max-width:90%; overflow-x:auto; margin-bottom:15px; padding:4px 0; scrollbar-width:none; -webkit-overflow-scrolling: touch;">
         <!-- Buttons added via JS -->
       </div>
+      
+      <button id="startScanPhaseBtn" class="btn primary" style="max-width: 280px; margin-bottom: 20px;">
+        ยืนยันโครงหน้าและเริ่มสแกน
+      </button>
 
       <div style="position:relative; width:280px; height:280px; margin-bottom:30px;">
         <canvas id="scanLiveCanvas" width="280" height="280" style="border-radius:50%; object-fit:cover; transform:scaleX(-1); box-shadow:0 0 30px rgba(111,174,138,0.15);"></canvas>
@@ -1806,9 +1810,23 @@
     pathEl.setAttribute('d', faceShapesData[currentFaceShape].path);
 
     // Video recording logic removed (Option B: Fast MediaPipe path)
-    let phase = 0; // 0: left, 1: right, 2: center, 3: countdown
+    let phase = -1; // -1: shape selection, 0: left, 1: right, 2: center, 3: countdown
     let count = 3;
     let lastTime = 0;
+    
+    // UI state for Step 1
+    const startScanBtn = document.getElementById('startScanPhaseBtn');
+    startScanBtn.style.display = 'block';
+    wrapper.style.display = 'flex';
+    document.getElementById('faceIdOverlayTitle').style.display = 'block';
+    document.getElementById('faceIdOverlayTitle').textContent = '1. เลือกโครงหน้าของคุณ';
+    
+    startScanBtn.onclick = () => {
+      phase = 0;
+      startScanBtn.style.display = 'none';
+      wrapper.style.display = 'none';
+      document.getElementById('faceIdOverlayTitle').style.display = 'none';
+    };
 
     function loop(now) {
       if (!threeModal || threeModal.classList.contains('hidden')) return;
@@ -1832,7 +1850,10 @@
       const distR = Math.hypot(nose.x - cheekR.x, nose.y - cheekR.y);
       let yaw = ((distR - distL) / ((distL + distR) || 1)) * 90;
 
-      if (phase === 0) {
+      if (phase === -1) {
+        promptTitle.innerHTML = 'ขยับใบหน้าให้ตรงกรอบ<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">และกดปุ่ม "ยืนยันและเริ่มสแกน"</span>';
+        ring.style.strokeDashoffset = 414.7; // Empty ring
+      } else if (phase === 0) {
         promptTitle.innerHTML = 'เริ่มสแกนโครงหน้า 3D<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">หันหน้าไปทาง <span style="color:#e3c390">"ซ้าย"</span> ช้าๆ</span>';
         ring.style.strokeDashoffset = 414.7 * 0.9;
         if (yaw < -12) phase = 1; // Swapped to fix mirrored detection

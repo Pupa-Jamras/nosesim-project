@@ -278,10 +278,22 @@
 
     <!-- Face ID Interactive overlay -->
     <div id="faceIdOverlay" class="hidden" style="position:absolute; inset:0; top:65px; z-index:10002; background:#0d1012; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-      <h3 style="color:#e3c390; font-family:'IBM Plex Mono',monospace; letter-spacing:0.05em; margin-bottom:40px;">INITIALIZING 3D MESH...</h3>
+      <h3 id="faceIdOverlayTitle" style="color:#e3c390; font-family:'IBM Plex Mono',monospace; letter-spacing:0.05em; margin-bottom:15px; font-size:14px;">1. เลือกกรอบใบหน้าของคุณ</h3>
+      
+      <!-- Shape Selector -->
+      <div id="shapeSelectorWrapper" style="display:flex; gap:8px; max-width:90%; overflow-x:auto; margin-bottom:20px; padding:4px 0; scrollbar-width:none; -webkit-overflow-scrolling: touch;">
+        <!-- Buttons added via JS -->
+      </div>
+
       <div style="position:relative; width:280px; height:280px; margin-bottom:30px;">
         <canvas id="scanLiveCanvas" width="280" height="280" style="border-radius:50%; object-fit:cover; transform:scaleX(-1); box-shadow:0 0 30px rgba(111,174,138,0.15);"></canvas>
-        <svg viewBox="0 0 140 140" style="position:absolute; top:0; left:0; width:100%; height:100%; transform:rotate(-90deg);">
+        
+        <!-- Shape Guide (Wireframe) -->
+        <svg id="shapeGuideSvg" viewBox="0 0 140 140" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;">
+          <path id="shapeGuidePath" d="" fill="none" stroke="#e3c390" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.8" style="transition: d 0.3s ease;"/>
+        </svg>
+
+        <svg viewBox="0 0 140 140" style="position:absolute; top:0; left:0; width:100%; height:100%; transform:rotate(-90deg); pointer-events:none;">
           <circle cx="70" cy="70" r="66" fill="none" stroke="#2e3436" stroke-width="4"/>
           <circle id="faceIdRing" cx="70" cy="70" r="66" fill="none" stroke="#6fae8a" stroke-width="4" stroke-dasharray="414.7" stroke-dashoffset="414.7" stroke-linecap="round" style="transition: stroke-dashoffset 0.4s ease;"/>
         </svg>
@@ -1740,6 +1752,17 @@
 
   let faceIdReqId = null;
 
+  const faceShapesData = {
+    oval: { name: '🥚 ทรงไข่', path: 'M 70,10 C 110,10 120,60 110,100 C 100,130 85,135 70,135 C 55,135 40,130 30,100 C 20,60 30,10 70,10 Z' },
+    round: { name: '🌕 หน้ากลม', path: 'M 70,15 C 115,15 125,65 115,100 C 105,125 90,130 70,130 C 50,130 35,125 25,100 C 15,65 25,15 70,15 Z' },
+    square: { name: '🔲 หน้าเหลี่ยม', path: 'M 70,15 C 110,15 115,50 115,90 C 115,120 100,125 70,130 C 40,125 25,120 25,90 C 25,50 30,15 70,15 Z' },
+    heart: { name: '💖 ทรงหัวใจ', path: 'M 70,15 C 120,10 125,55 110,90 C 95,120 80,135 70,135 C 60,135 45,120 30,90 C 15,55 20,10 70,15 Z' },
+    long: { name: '🥖 ทรงยาว', path: 'M 70,5 C 100,5 110,60 105,110 C 100,135 85,140 70,140 C 55,140 40,135 35,110 C 30,60 40,5 70,5 Z' },
+    diamond: { name: '💎 ทรงเพชร', path: 'M 70,15 C 95,15 125,60 110,95 C 95,125 80,135 70,135 C 60,135 45,125 30,95 C 15,60 45,15 70,15 Z' },
+    pear: { name: '🍐 ทรงลูกแพร์', path: 'M 70,20 C 95,20 100,50 115,100 C 125,130 90,135 70,135 C 50,135 15,130 25,100 C 40,50 45,20 70,20 Z' }
+  };
+  let currentFaceShape = 'oval';
+
   function open3DScanModal() {
     if (!latestLandmarks) {
       alert('กรุณารอให้ระบบจับใบหน้าก่อนครับ');
@@ -1754,6 +1777,33 @@
     const sCtx = document.getElementById('scanLiveCanvas').getContext('2d');
     const ring = document.getElementById('faceIdRing');
     const promptTitle = document.getElementById('faceIdPrompt');
+
+    const wrapper = document.getElementById('shapeSelectorWrapper');
+    const pathEl = document.getElementById('shapeGuidePath');
+    
+    // Render shape buttons
+    wrapper.innerHTML = '';
+    Object.keys(faceShapesData).forEach(key => {
+      const btn = document.createElement('button');
+      btn.textContent = faceShapesData[key].name;
+      btn.style.cssText = `background: ${key === currentFaceShape ? 'rgba(227,195,144,0.15)' : 'rgba(255,255,255,0.05)'}; border: 1px solid ${key === currentFaceShape ? '#e3c390' : '#2e3436'}; color: ${key === currentFaceShape ? '#e3c390' : '#9a958c'}; padding: 8px 14px; border-radius: 20px; font-size: 13px; font-family: 'Inter', sans-serif; white-space: nowrap; cursor: pointer; transition: all 0.2s; flex-shrink: 0;`;
+      
+      btn.onclick = () => {
+        currentFaceShape = key;
+        pathEl.setAttribute('d', faceShapesData[key].path);
+        // Update styles
+        Array.from(wrapper.children).forEach((child, idx) => {
+          const k = Object.keys(faceShapesData)[idx];
+          child.style.background = k === currentFaceShape ? 'rgba(227,195,144,0.15)' : 'rgba(255,255,255,0.05)';
+          child.style.borderColor = k === currentFaceShape ? '#e3c390' : '#2e3436';
+          child.style.color = k === currentFaceShape ? '#e3c390' : '#9a958c';
+        });
+      };
+      wrapper.appendChild(btn);
+    });
+    
+    // Set initial path
+    pathEl.setAttribute('d', faceShapesData[currentFaceShape].path);
 
     // Video recording logic removed (Option B: Fast MediaPipe path)
     let phase = 0; // 0: left, 1: right, 2: center, 3: countdown
@@ -1907,33 +1957,37 @@
   document.getElementById('threeAiBtn').addEventListener('click', () => {
     if (!staticLandmarks) return;
     
-    const p = i => staticLandmarks[i];
-    // Calculate face metrics (width/height ratio)
-    const faceW = Math.hypot(p(234).x - p(454).x, p(234).y - p(454).y);
-    const faceH = Math.hypot(p(10).x - p(152).x, p(10).y - p(152).y);
-    const ratio = faceW / faceH;
-    
-    // Simple AI heuristic based on face shape
+    // Use the explicitly selected face shape for the heuristic
     let preset = [0, 0, 0, 0, 0, 0, 0];
+    let msg = '';
+    
     // Show toast notification
     let toast = document.getElementById('aiToast');
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'aiToast';
-      toast.style.cssText = 'position:absolute; top:80px; right:360px; z-index:10005; background:rgba(111,174,138,0.15); border:1px solid #6fae8a; color:#f2ece2; padding:16px 20px; border-radius:12px; font-family:"IBM Plex Mono",monospace; font-size:13px; backdrop-filter:blur(10px); transition:opacity 0.3s; opacity:0;';
+      toast.style.cssText = 'position:absolute; top:80px; right:360px; z-index:10005; background:rgba(111,174,138,0.15); border:1px solid #6fae8a; color:#f2ece2; padding:16px 20px; border-radius:12px; font-family:"IBM Plex Mono",monospace; font-size:13px; backdrop-filter:blur(10px); transition:opacity 0.3s; opacity:0; pointer-events:none;';
       document.getElementById('threeModal').appendChild(toast);
     }
     
-    if (ratio > 0.75) {
-      preset = [35, 10, -20, -15, -10, 5, 25];
-      toast.innerHTML = '<strong style="color:#6fae8a;">✨ AI วิเคราะห์: ใบหน้าทรงกว้าง</strong><br><span style="color:#9a958c; font-size:11px;">ระบบปรับสันให้คมชัดและปีกจมูกเรียวขึ้นเพื่อสร้างมิติ</span>';
-    } else if (ratio < 0.65) {
-      preset = [15, -10, 10, 5, 10, 15, 15];
-      toast.innerHTML = '<strong style="color:#6fae8a;">✨ AI วิเคราะห์: ใบหน้าทรงยาว</strong><br><span style="color:#9a958c; font-size:11px;">ระบบปรับปลายให้เชิดขึ้นเล็กน้อย สร้างความสมดุลให้ใบหน้า</span>';
-    } else {
-      preset = [25, 5, -10, -5, -5, 10, 20];
-      toast.innerHTML = '<strong style="color:#6fae8a;">✨ AI วิเคราะห์: ใบหน้าทรงรูปไข่ (สมมาตร)</strong><br><span style="color:#9a958c; font-size:11px;">ระบบปรับทรงหยดน้ำมาตรฐาน (Golden Ratio) ที่เข้ากับรูปหน้า</span>';
+    switch(currentFaceShape) {
+      case 'oval': 
+        preset = [25, 5, -10, -5, -5, 10, 20]; msg = 'ใบหน้าทรงไข่ (Oval)'; break;
+      case 'round': 
+        preset = [35, 10, -20, -15, -10, 5, 25]; msg = 'หน้ากลม (Round)'; break;
+      case 'square': 
+        preset = [25, 5, -15, -10, -5, 15, 20]; msg = 'หน้าเหลี่ยม (Square)'; break;
+      case 'heart': 
+        preset = [20, 0, -10, -5, 5, 10, 15]; msg = 'ทรงหัวใจ (Heart)'; break;
+      case 'long': 
+        preset = [15, -10, 10, 5, 10, 15, 15]; msg = 'ทรงยาว (Long)'; break;
+      case 'diamond': 
+        preset = [30, 5, -15, -10, -10, 5, 25]; msg = 'ทรงเพชร (Diamond)'; break;
+      case 'pear': 
+        preset = [35, 10, -20, -15, -5, 5, 20]; msg = 'ทรงลูกแพร์ (Pear)'; break;
     }
+    
+    toast.innerHTML = `<strong style="color:#6fae8a;">✨ AI วิเคราะห์รูปทรงที่คุณเลือก: ${msg}</strong><br><span style="color:#9a958c; font-size:11px;">ระบบปรับทรงจมูกให้รับกับโครงหน้า ${msg.split(' ')[0]} แบบอัตโนมัติ</span>`;
     
     toast.style.opacity = '1';
     setTimeout(() => { toast.style.opacity = '0'; }, 4000);

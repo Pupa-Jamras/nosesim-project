@@ -206,7 +206,167 @@
   footer .wrap{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;}
   footer .brand{font-size:15px;}
   footer p{font-size:13px; color:var(--muted);}
-</style>
+
+  /* ---------- Price Estimation Card ---------- */
+  .price-card {
+    background: linear-gradient(165deg, rgba(30, 36, 38, 0.95), rgba(20, 24, 26, 0.98));
+    border: 1px solid rgba(201, 154, 91, 0.25);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-top: 6px;
+    margin-bottom: 6px;
+  }
+  .price-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--bronze), transparent);
+    opacity: 0.8;
+  }
+  .price-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .price-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cream);
+    letter-spacing: 0.02em;
+  }
+  .price-card-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    background: rgba(111, 174, 138, 0.15);
+    color: var(--green);
+    border: 0.5px solid rgba(111, 174, 138, 0.4);
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+  }
+  .price-total-box {
+    background: rgba(12, 15, 16, 0.6);
+    border: 1px solid rgba(201, 154, 91, 0.2);
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-align: center;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .price-total-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .price-total-val {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--bronze-soft);
+    text-shadow: 0 0 20px rgba(201, 154, 91, 0.3);
+    line-height: 1.2;
+    transition: all 0.3s ease;
+  }
+  .price-technique-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 6px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: rgba(201, 154, 91, 0.12);
+    color: var(--bronze);
+    border: 0.5px solid rgba(201, 154, 91, 0.3);
+  }
+  .price-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 10px;
+    max-height: 170px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .price-list::-webkit-scrollbar {
+    width: 4px;
+  }
+  .price-list::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border-radius: 4px;
+  }
+  .price-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    animation: fadeInPrice 0.25s ease-out;
+  }
+  @keyframes fadeInPrice {
+    from { opacity: 0; transform: translateY(-3px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .price-item-name {
+    color: var(--cream);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    text-align: left;
+  }
+  .price-item-dot {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--bronze); flex-shrink: 0;
+  }
+  .price-item-cost {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--bronze-soft);
+    font-weight: 500;
+    font-size: 10.5px;
+    white-space: nowrap;
+    margin-left: 8px;
+  }
+  .price-empty-hint {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    padding: 10px 4px;
+    line-height: 1.5;
+  }
+  .price-disclaimer {
+    font-size: 9.5px;
+    color: #7a766e;
+    line-height: 1.4;
+    border-top: 1px dashed rgba(255, 255, 255, 0.06);
+    padding-top: 8px;
+  }
+  .price-inclusions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+  .price-inc-tag {
+    font-size: 9.5px;
+    color: var(--green);
+    background: rgba(111, 174, 138, 0.1);
+    border: 0.5px solid rgba(111, 174, 138, 0.25);
+    border-radius: 4px;
+    padding: 2px 5px;
+  }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -364,6 +524,41 @@
         <input type="range" id="tProjSlider" min="-100" max="100" value="0">
       </div>
 
+      <!-- Price Estimation Card in 3D Sidebar -->
+      <div id="priceEstimationCard" class="price-card">
+        <div class="price-card-header">
+          <div class="price-card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--bronze-soft);"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="7" cy="15" r="1.5" fill="currentColor"/><line x1="12" y1="15" x2="17" y2="15"/></svg>
+            <span>ประมาณการค่ารักษา</span>
+          </div>
+          <span class="price-card-badge">LIVE 3D</span>
+        </div>
+
+        <div class="price-total-box">
+          <div class="price-total-label">ช่วงราคาประเมินรวม (โดยประมาณ)</div>
+          <div id="priceTotalVal" class="price-total-val">฿0</div>
+          <div id="priceTechniqueTag" class="price-technique-tag">โครงสร้างเดิม (ไม่มีการผ่าตัด)</div>
+        </div>
+
+        <div style="font-size: 10px; color: var(--muted); letter-spacing: 0.04em; margin-bottom: 6px; font-family: 'IBM Plex Mono', monospace;">
+          รายการหัตถการตามทรง 3D ที่ปรับ:
+        </div>
+
+        <div id="priceItemsList" class="price-list">
+          <div class="price-empty-hint">ยังไม่มีการปรับแต่งทรงจมูก<br>ขยับ Slider ด้านบนเพื่อดูการประเมินราคา</div>
+        </div>
+
+        <div class="price-inclusions">
+          <span class="price-inc-tag">✓ ซิลิโคน/วัสดุมาตรฐาน</span>
+          <span class="price-inc-tag">✓ ยา & ตัดไหม</span>
+          <span class="price-inc-tag">✓ ประกันทรง 1 ปี</span>
+        </div>
+
+        <div class="price-disclaimer">
+          * ราคาเป็นการประเมินเบื้องต้นตามหัตถการในคลินิกชั้นนำ อาจแตกต่างตามเทคนิคแพทย์ ชนิดวัสดุ และโครงสร้างเดิม
+        </div>
+      </div>
+
       <button id="threeCaptureBtn" class="btn primary" style="margin-top: 10px;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px; margin-right:4px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
         บันทึกรูปภาพ 3D
@@ -489,6 +684,18 @@
           <div class="slider-row">
             <div class="label-row"><span>ความพุ่ง/แสงเงา (Projection)</span><span id="projectionValLabel" class="mono">0%</span></div>
             <input type="range" id="projectionSlider" min="-100" max="100" value="0">
+          </div>
+
+          <!-- 2D Price Estimate Preview -->
+          <div id="priceEstimationBar2D" style="background: rgba(30,36,38,0.7); border: 1px solid rgba(201,154,91,0.25); border-radius: 10px; padding: 10px 14px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(8px);">
+            <div>
+              <div style="font-size: 10.5px; color: var(--muted); letter-spacing: 0.04em;">💰 ประมาณการค่ารักษาเบื้องต้น</div>
+              <div id="priceTotalVal2D" style="font-family: 'Fraunces', serif; font-size: 17px; color: var(--bronze-soft); font-weight: 600;">฿0</div>
+            </div>
+            <div style="text-align: right;">
+              <span id="priceTechniqueTag2D" style="font-size: 10px; padding: 2px 8px; border-radius: 10px; background: rgba(201,154,91,0.12); color: var(--bronze); border: 0.5px solid rgba(201,154,91,0.25);">โครงสร้างเดิม</span>
+              <div id="priceItemCount2D" style="font-size: 9.5px; color: var(--muted); margin-top: 2px; font-family: 'IBM Plex Mono', monospace;">0 หัตถการ</div>
+            </div>
           </div>
 
           <div class="tool-actions">
@@ -1303,7 +1510,19 @@
     });
   });
 
-  const onSliderChange = () => { if(currentSourceType === 'image') drawToCanvas(true); };
+  const onSliderChange = () => {
+    // Update 2D labels
+    bridgeValLabel.textContent = bridgeSlider.value + '%';
+    widthValLabel.textContent = widthSlider.value + '%';
+    tipValLabel.textContent = tipSlider.value + '%';
+    humpValLabel.textContent = humpSlider.value + '%';
+    alarValLabel.textContent = alarSlider.value + '%';
+    rotationValLabel.textContent = rotationSlider.value + '%';
+    projectionValLabel.textContent = projectionSlider.value + '%';
+    
+    if (typeof update2DPriceEstimate === 'function') update2DPriceEstimate();
+    if(currentSourceType === 'image') drawToCanvas(true);
+  };
   bridgeSlider.addEventListener('input', onSliderChange);
   widthSlider.addEventListener('input', onSliderChange);
   tipSlider.addEventListener('input', onSliderChange);
@@ -1347,8 +1566,11 @@
 
   resetBtn.addEventListener('click', () => {
     bridgeSlider.value = 0; widthSlider.value = 0; tipSlider.value = 0;
+    humpSlider.value = 0; alarSlider.value = 0; rotationSlider.value = 0; projectionSlider.value = 0;
     bridgeValLabel.textContent = '0%'; widthValLabel.textContent = '0%'; tipValLabel.textContent = '0%';
+    humpValLabel.textContent = '0%'; alarValLabel.textContent = '0%'; rotationValLabel.textContent = '0%'; projectionValLabel.textContent = '0%';
     onSliderChange();
+    if (typeof update2DPriceEstimate === 'function') update2DPriceEstimate();
   });
 
   captureBtn.addEventListener('click', () => {
@@ -1584,9 +1806,13 @@
     dirLight.position.set(0, 50, 500);
     scene.add(dirLight);
 
-    // Load High-Poly GLB
+    // Load High-Poly GLB with cross-protocol compatibility (supports local file:// and remote https://)
     const loader = new THREE.GLTFLoader();
-    loader.load('canonical_face.glb', function(gltf) {
+    const primaryUrl = (window.location.protocol === 'file:') 
+      ? 'https://pupa-jamras.github.io/nosesim-project/nosesin/canonical_face.glb' 
+      : 'canonical_face.glb';
+
+    function setupGLTFMesh(gltf) {
       gltfModel = gltf.scene;
       
       // Extract the mesh
@@ -1621,10 +1847,17 @@
       scene.add(gltfModel);
       
       if (staticLandmarks) updateThreeJS();
+    }
+
+    loader.load(primaryUrl, setupGLTFMesh, undefined, function(error) {
+      console.warn('Could not load primary GLB from ' + primaryUrl + ', trying fallback...', error);
+      const fallbackUrl = (primaryUrl === 'canonical_face.glb') 
+        ? 'https://pupa-jamras.github.io/nosesim-project/nosesin/canonical_face.glb' 
+        : 'canonical_face.glb';
       
-    }, undefined, function(error) {
-      console.error(error);
-      alert('Error loading GLB model!');
+      loader.load(fallbackUrl, setupGLTFMesh, undefined, function(err2) {
+        console.error('All GLB load attempts failed:', err2);
+      });
     });
 
     window.addEventListener('resize', () => {
@@ -1938,6 +2171,10 @@
     document.getElementById('faceIdOverlay').classList.add('hidden');
     document.getElementById('scanMetrics').classList.remove('hidden');
     threeContainer.style.opacity = '1';
+
+    // Synchronize 2D slider values into 3D modal if set, and update price estimate
+    sync2DTo3DSliders();
+    update3DPriceEstimate();
   }
 
   threeBtn.addEventListener('click', open3DScanModal);
@@ -1948,6 +2185,8 @@
       cancelAnimationFrame(faceIdReqId);
       faceIdReqId = null;
     }
+    // Sync adjustments made in 3D back to 2D
+    sync3DTo2DSliders();
     threeModal.classList.add('hidden');
     staticLandmarks = null;
     if (staticVideoTexture) {
@@ -1959,6 +2198,334 @@
   closeThreeBtn.addEventListener('click', close3DAndProceed);
   document.getElementById('proceedToEditorBtn').addEventListener('click', close3DAndProceed);
 
+  // ==========================================
+  // NOSE SURGERY PRICE ESTIMATION ENGINE
+  // ==========================================
+  function calculateNoseProcedures(bridge, hump, alar, width, tip, rotation, proj) {
+    const items = [];
+
+    // 1. Bridge (ดั้ง/สันจมูก)
+    if (bridge > 15) {
+      if (bridge <= 45) {
+        items.push({
+          id: 'bridge_std',
+          name: 'เสริมสันจมูก ซิลิโคนพรีเมียม (USA Medical Grade)',
+          min: 25000,
+          max: 45000,
+          detail: `ยกสันโด่งเป็นธรรมชาติ +${bridge}%`
+        });
+      } else {
+        items.push({
+          id: 'bridge_high',
+          name: 'เสริมสันจมูก เหลาพิเศษ + เสริมเนื้อเยื่อเทียม',
+          min: 45000,
+          max: 75000,
+          detail: `ยกสันโด่งพิเศษ +${bridge}%`
+        });
+      }
+    } else if (bridge < -15) {
+      items.push({
+        id: 'bridge_reduce',
+        name: 'ผ่าตัดปรับลดระดับความสูงสันจมูก',
+        min: 25000,
+        max: 45000,
+        detail: `ลดระดับสัน ${bridge}%`
+      });
+    }
+
+    // 2. Hump / Slope (ลดฮัมพ์ / ปรับสโลป)
+    if (hump > 15) {
+      if (hump <= 45) {
+        items.push({
+          id: 'hump_rasp',
+          name: 'ตะไบกระดูกฮัมพ์ ปรับสโลปเนียนรับหน้าผาก',
+          min: 15000,
+          max: 30000,
+          detail: `ตะไบฮัมพ์ ${hump}%`
+        });
+      } else {
+        items.push({
+          id: 'hump_resect',
+          name: 'ตอกฐานปรับแนวกระดูกฮัมพ์ + กรอสันกระดูก',
+          min: 30000,
+          max: 55000,
+          detail: `ปรับโครงสร้างฮัมพ์ ${hump}%`
+        });
+      }
+    } else if (hump < -15) {
+      items.push({
+        id: 'slope_add',
+        name: 'ปรับแต่งสโลปละมุน (Slope Enhancement)',
+        min: 15000,
+        max: 35000,
+        detail: `แต่งความโค้งสโลป ${Math.abs(hump)}%`
+      });
+    }
+
+    // 3. Alar Width (ความกว้างปีกจมูก)
+    if (alar < -10) {
+      if (alar >= -35) {
+        items.push({
+          id: 'alar_soft',
+          name: 'เย็บกระชับปีกจมูกม้วนใน (Flap Technique แผลใน)',
+          min: 18000,
+          max: 28000,
+          detail: `ลดขนาดปีก ${Math.abs(alar)}%`
+        });
+      } else {
+        items.push({
+          id: 'alar_full',
+          name: 'ผ่าตัดตัดปีกจมูก + ปรับฐานปีก (Alarplasty)',
+          min: 28000,
+          max: 45000,
+          detail: `ลดปีกแคบเรียว ${Math.abs(alar)}%`
+        });
+      }
+    } else if (alar > 15) {
+      items.push({
+        id: 'alar_expand',
+        name: 'ปรับแต่งโครงสร้างปีกและรูจมูก',
+        min: 20000,
+        max: 40000,
+        detail: `ปรับมิติปีก +${alar}%`
+      });
+    }
+
+    // 4. Bridge Width (ความกว้างสัน)
+    if (Math.abs(width) > 12) {
+      items.push({
+        id: 'osteotomy',
+        name: 'ตอกยุบฐานกระดูกจมูกให้เรียวสวย (Osteotomy)',
+        min: 20000,
+        max: 40000,
+        detail: width < 0 ? `บีบกระดูกสันแคบลง ${Math.abs(width)}%` : `ขยายมิติฐาน ${width}%`
+      });
+    }
+
+    // 5. Tip Size (ขนาดปลายจมูก)
+    if (tip < -10) {
+      items.push({
+        id: 'tip_refine',
+        name: 'เย็บอินเตอร์โดม + ตัดไขมันส่วนเกินปลายจมูก',
+        min: 15000,
+        max: 35000,
+        detail: `ลดขนาดปลายมน ${Math.abs(tip)}%`
+      });
+    } else if (tip > 15) {
+      items.push({
+        id: 'tip_enlarge',
+        name: 'ปลูกถ่ายเนื้อเยื่อแต่งปลายหยดน้ำ',
+        min: 18000,
+        max: 38000,
+        detail: `เพิ่มมิติเนื้อปลาย +${tip}%`
+      });
+    }
+
+    // 6. Tip Rotation (องศาเชิด)
+    if (Math.abs(rotation) > 12) {
+      items.push({
+        id: 'septal_extension',
+        name: 'ยืดผนังกั้นจมูก + ล็อคแกนปลายเชิด (Septal Extension)',
+        min: 30000,
+        max: 65000,
+        detail: rotation > 0 ? `ยกปลายเชิด +${rotation}°` : `ปรับมุมปลายงุ้ม ${rotation}°`
+      });
+    }
+
+    // 7. Projection (ความพุ่ง / รองปลาย)
+    if (proj > 12) {
+      if (proj <= 40) {
+        items.push({
+          id: 'ear_cartilage',
+          name: 'รองปลายกระดูกอ่อนหลังหู / เนื้อเยื่อเทียมกันทะลุ',
+          min: 18000,
+          max: 35000,
+          detail: `ปลายพุ่งมีมิติ +${proj}%`
+        });
+      } else {
+        items.push({
+          id: 'rib_cartilage',
+          name: 'สร้างโครงสร้างปลายพุ่งด้วยกระดูกอ่อนซี่โครง/กอร์เท็กซ์',
+          min: 50000,
+          max: 95000,
+          detail: `ปลายพุ่งพิเศษ +${proj}%`
+        });
+      }
+    } else if (proj < -15) {
+      items.push({
+        id: 'proj_reduce',
+        name: 'ปรับลดความพุ่งของปลายจมูกให้รับใบหน้า',
+        min: 18000,
+        max: 35000,
+        detail: `ลดความพุ่ง ${proj}%`
+      });
+    }
+
+    // กำหนดเทคนิคการผ่าตัดที่เหมาะสม
+    let technique = 'โครงสร้างเดิม (ไม่มีการผ่าตัด)';
+    if (items.length === 1 && !['osteotomy', 'septal_extension', 'rib_cartilage'].includes(items[0].id)) {
+      technique = 'หัตถการแบบปิด (Closed Rhinoplasty)';
+    } else if (items.length >= 2 && items.length <= 3 && !items.some(i => i.id === 'septal_extension' || i.id === 'rib_cartilage')) {
+      technique = 'เทคนิคกึ่งเปิด (Semi-Open Technique)';
+    } else if (items.length > 0) {
+      technique = 'ศัลยกรรมโครงสร้างโอเพ่น (Open Rhinoplasty)';
+    }
+
+    // คำนวณราคารวม (รวมแพ็กเกจหัตถการร่วม)
+    let totalMin = 0;
+    let totalMax = 0;
+    if (items.length > 0) {
+      const rawMin = items.reduce((sum, item) => sum + item.min, 0);
+      const rawMax = items.reduce((sum, item) => sum + item.max, 0);
+
+      if (items.length >= 3) {
+        totalMin = Math.round((rawMin * 0.82) / 1000) * 1000;
+        totalMax = Math.round((rawMax * 0.85) / 1000) * 1000;
+      } else if (items.length === 2) {
+        totalMin = Math.round((rawMin * 0.9) / 1000) * 1000;
+        totalMax = Math.round((rawMax * 0.9) / 1000) * 1000;
+      } else {
+        totalMin = rawMin;
+        totalMax = rawMax;
+      }
+    }
+
+    return {
+      items,
+      technique,
+      totalMin,
+      totalMax
+    };
+  }
+
+  function update2DPriceEstimate() {
+    const b = parseInt(bridgeSlider.value, 10) || 0;
+    const h = parseInt(humpSlider.value, 10) || 0;
+    const a = parseInt(alarSlider.value, 10) || 0;
+    const w = parseInt(widthSlider.value, 10) || 0;
+    const t = parseInt(tipSlider.value, 10) || 0;
+    const r = parseInt(rotationSlider.value, 10) || 0;
+    const p = parseInt(projectionSlider.value, 10) || 0;
+
+    const res = calculateNoseProcedures(b, h, a, w, t, r, p);
+    const val2D = document.getElementById('priceTotalVal2D');
+    const tag2D = document.getElementById('priceTechniqueTag2D');
+    const count2D = document.getElementById('priceItemCount2D');
+    if (!val2D || !tag2D || !count2D) return;
+
+    if (res.items.length === 0) {
+      val2D.textContent = '฿0';
+      tag2D.textContent = 'โครงสร้างเดิม';
+      count2D.textContent = '0 หัตถการ';
+    } else {
+      val2D.textContent = '฿' + res.totalMin.toLocaleString() + ' – ฿' + res.totalMax.toLocaleString();
+      tag2D.textContent = res.technique.split(' ')[0];
+      count2D.textContent = res.items.length + ' หัตถการประเมิน';
+    }
+  }
+
+  function update3DPriceEstimate() {
+    const b = parseInt(document.getElementById('tBridgeSlider').value, 10) || 0;
+    const h = parseInt(document.getElementById('tHumpSlider').value, 10) || 0;
+    const a = parseInt(document.getElementById('tAlarSlider').value, 10) || 0;
+    const w = parseInt(document.getElementById('tWidthSlider').value, 10) || 0;
+    const t = parseInt(document.getElementById('tTipSlider').value, 10) || 0;
+    const r = parseInt(document.getElementById('tRotationSlider').value, 10) || 0;
+    const p = parseInt(document.getElementById('tProjSlider').value, 10) || 0;
+
+    const res = calculateNoseProcedures(b, h, a, w, t, r, p);
+    
+    const priceValEl = document.getElementById('priceTotalVal');
+    const techniqueEl = document.getElementById('priceTechniqueTag');
+    const listEl = document.getElementById('priceItemsList');
+
+    if (!priceValEl || !techniqueEl || !listEl) return;
+
+    if (res.items.length === 0) {
+      priceValEl.textContent = '฿0';
+      techniqueEl.textContent = 'โครงสร้างเดิม (ไม่มีการผ่าตัด)';
+      techniqueEl.style.background = 'rgba(154, 149, 140, 0.15)';
+      techniqueEl.style.color = 'var(--muted)';
+      techniqueEl.style.borderColor = 'rgba(154, 149, 140, 0.3)';
+      listEl.innerHTML = '<div class="price-empty-hint">ยังไม่มีการปรับแต่งทรงจมูก<br>ขยับ Slider ด้านบนเพื่อดูการประเมินราคา</div>';
+    } else {
+      priceValEl.textContent = '฿' + res.totalMin.toLocaleString() + ' – ฿' + res.totalMax.toLocaleString();
+      techniqueEl.textContent = res.technique;
+      techniqueEl.style.background = 'rgba(201, 154, 91, 0.15)';
+      techniqueEl.style.color = 'var(--bronze-soft)';
+      techniqueEl.style.borderColor = 'rgba(201, 154, 91, 0.4)';
+
+      let html = '';
+      res.items.forEach(item => {
+        html += `
+          <div class="price-item">
+            <div class="price-item-name">
+              <span class="price-item-dot"></span>
+              <div>
+                <div>${item.name}</div>
+                <div style="font-size:9.5px; color:var(--muted); font-family:'IBM Plex Mono',monospace;">${item.detail}</div>
+              </div>
+            </div>
+            <div class="price-item-cost">฿${item.min.toLocaleString()} - ฿${item.max.toLocaleString()}</div>
+          </div>
+        `;
+      });
+      listEl.innerHTML = html;
+    }
+  }
+
+  function sync2DTo3DSliders() {
+    const pairs = [
+      ['bridgeSlider', 'tBridgeSlider', 'tBridgeVal'],
+      ['humpSlider', 'tHumpSlider', 'tHumpVal'],
+      ['alarSlider', 'tAlarSlider', 'tAlarVal'],
+      ['widthSlider', 'tWidthSlider', 'tWidthVal'],
+      ['tipSlider', 'tTipSlider', 'tTipVal'],
+      ['rotationSlider', 'tRotationSlider', 'tRotationVal'],
+      ['projectionSlider', 'tProjSlider', 'tProjVal']
+    ];
+    let hasNonZero2D = false;
+    pairs.forEach(([id2d]) => {
+      const el2d = document.getElementById(id2d);
+      if (el2d && parseInt(el2d.value, 10) !== 0) hasNonZero2D = true;
+    });
+
+    if (hasNonZero2D) {
+      pairs.forEach(([id2d, id3d, idVal]) => {
+        const el2d = document.getElementById(id2d);
+        const el3d = document.getElementById(id3d);
+        const elVal = document.getElementById(idVal);
+        if (el2d && el3d) {
+          el3d.value = el2d.value;
+          if (elVal) elVal.textContent = el2d.value + '%';
+        }
+      });
+    }
+  }
+
+  function sync3DTo2DSliders() {
+    const pairs = [
+      ['tBridgeSlider', 'bridgeSlider', 'bridgeValLabel'],
+      ['tHumpSlider', 'humpSlider', 'humpValLabel'],
+      ['tAlarSlider', 'alarSlider', 'alarValLabel'],
+      ['tWidthSlider', 'widthSlider', 'widthValLabel'],
+      ['tTipSlider', 'tipSlider', 'tipValLabel'],
+      ['tRotationSlider', 'rotationSlider', 'rotationValLabel'],
+      ['tProjSlider', 'projectionSlider', 'projectionValLabel']
+    ];
+    pairs.forEach(([id3d, id2d, idVal]) => {
+      const el3d = document.getElementById(id3d);
+      const el2d = document.getElementById(id2d);
+      const elVal = document.getElementById(idVal);
+      if (el3d && el2d) {
+        el2d.value = el3d.value;
+        if (elVal) elVal.textContent = el3d.value + '%';
+      }
+    });
+    update2DPriceEstimate();
+    if (typeof onSliderChange === 'function') onSliderChange();
+  }
+
   // 3D Controls Listeners
   const onThreeSliderChange = (e) => {
     // Update value label
@@ -1969,6 +2536,9 @@
     
     // Update 3D mesh
     updateThreeJS();
+
+    // Update 3D Price Estimate
+    update3DPriceEstimate();
   };
 
   ['tBridgeSlider', 'tHumpSlider', 'tAlarSlider', 'tWidthSlider', 'tTipSlider', 'tRotationSlider', 'tProjSlider'].forEach(id => {
@@ -2021,6 +2591,7 @@
     });
     
     updateThreeJS();
+    update3DPriceEstimate();
   });
 
   document.getElementById('toggleWireframeBtn').addEventListener('click', () => {

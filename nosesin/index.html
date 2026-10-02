@@ -207,84 +207,124 @@
   footer .brand{font-size:15px;}
   footer p{font-size:13px; color:var(--muted);}
 
-  /* ---------- Price Estimation Card ---------- */
+  /* ---------- 3D Sidebar Layout & Anti-Squish ---------- */
+  #sidebarLayout {
+    width: 350px !important;
+    background: #14181a !important;
+    border-left: 1px solid #2e3436 !important;
+    padding: 16px 16px 24px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    z-index: 2 !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(201, 154, 91, 0.4) rgba(20, 24, 26, 0.6);
+  }
+  #sidebarLayout::-webkit-scrollbar {
+    width: 6px;
+  }
+  #sidebarLayout::-webkit-scrollbar-track {
+    background: rgba(12, 15, 16, 0.6);
+  }
+  #sidebarLayout::-webkit-scrollbar-thumb {
+    background: rgba(201, 154, 91, 0.35);
+    border-radius: 4px;
+  }
+  #sidebarLayout::-webkit-scrollbar-thumb:hover {
+    background: var(--bronze);
+  }
+
+  /* Prevent any item inside sidebar from being squished */
+  #sidebarLayout > * {
+    flex-shrink: 0 !important;
+  }
+
+  #sidebarLayout .slider-row {
+    gap: 4px;
+    margin-bottom: 2px;
+  }
+  #sidebarLayout .slider-row .label-row {
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  /* ---------- Price Estimation Card (Compact & Flawless) ---------- */
   .price-card {
-    background: linear-gradient(165deg, rgba(30, 36, 38, 0.95), rgba(20, 24, 26, 0.98));
-    border: 1px solid rgba(201, 154, 91, 0.25);
+    background: linear-gradient(165deg, rgba(28, 34, 36, 0.95), rgba(18, 22, 24, 0.98));
+    border: 1px solid rgba(201, 154, 91, 0.3);
     border-radius: 12px;
-    padding: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    padding: 12px 14px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     position: relative;
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    margin-top: 6px;
-    margin-bottom: 6px;
+    overflow: visible !important;
+    flex-shrink: 0 !important;
+    margin: 4px 0;
   }
   .price-card::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0; height: 2px;
     background: linear-gradient(90deg, transparent, var(--bronze), transparent);
-    opacity: 0.8;
+    opacity: 0.9;
   }
   .price-card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
   .price-card-title {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 13px;
+    gap: 6px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--cream);
-    letter-spacing: 0.02em;
   }
   .price-card-badge {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+    font-size: 9px;
     background: rgba(111, 174, 138, 0.15);
     color: var(--green);
     border: 0.5px solid rgba(111, 174, 138, 0.4);
-    padding: 2px 7px;
+    padding: 1px 6px;
     border-radius: 20px;
     letter-spacing: 0.05em;
   }
   .price-total-box {
-    background: rgba(12, 15, 16, 0.6);
-    border: 1px solid rgba(201, 154, 91, 0.2);
-    border-radius: 10px;
-    padding: 12px 14px;
+    background: rgba(12, 15, 16, 0.7);
+    border: 1px solid rgba(201, 154, 91, 0.25);
+    border-radius: 8px;
+    padding: 8px 10px;
     text-align: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     position: relative;
   }
   .price-total-label {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--muted);
-    letter-spacing: 0.05em;
-    margin-bottom: 4px;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
   }
   .price-total-val {
     font-family: 'Fraunces', serif;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 600;
     color: var(--bronze-soft);
-    text-shadow: 0 0 20px rgba(201, 154, 91, 0.3);
-    line-height: 1.2;
-    transition: all 0.3s ease;
+    text-shadow: 0 0 16px rgba(201, 154, 91, 0.35);
+    line-height: 1.25;
+    margin: 2px 0 4px 0;
   }
   .price-technique-tag {
     display: inline-block;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
-    margin-top: 6px;
-    padding: 3px 10px;
-    border-radius: 12px;
+    padding: 2px 8px;
+    border-radius: 10px;
     background: rgba(201, 154, 91, 0.12);
     color: var(--bronze);
     border: 0.5px solid rgba(201, 154, 91, 0.3);
@@ -292,33 +332,28 @@
   .price-list {
     display: flex;
     flex-direction: column;
-    gap: 7px;
-    margin-bottom: 10px;
-    max-height: 170px;
+    gap: 5px;
+    margin-bottom: 8px;
+    max-height: 130px;
     overflow-y: auto;
-    padding-right: 4px;
+    padding-right: 3px;
   }
   .price-list::-webkit-scrollbar {
     width: 4px;
   }
   .price-list::-webkit-scrollbar-thumb {
-    background: var(--line);
+    background: rgba(201, 154, 91, 0.3);
     border-radius: 4px;
   }
   .price-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 11px;
-    background: rgba(255, 255, 255, 0.02);
-    padding: 6px 8px;
+    font-size: 10.5px;
+    background: rgba(255, 255, 255, 0.025);
+    padding: 5px 8px;
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.04);
-    animation: fadeInPrice 0.25s ease-out;
-  }
-  @keyframes fadeInPrice {
-    from { opacity: 0; transform: translateY(-3px); }
-    to { opacity: 1; transform: translateY(0); }
   }
   .price-item-name {
     color: var(--cream);
@@ -327,45 +362,51 @@
     gap: 6px;
     flex: 1;
     text-align: left;
+    min-width: 0;
+  }
+  .price-item-name > div {
+    min-width: 0;
+    line-height: 1.25;
   }
   .price-item-dot {
-    width: 5px; height: 5px; border-radius: 50%; background: var(--bronze); flex-shrink: 0;
+    width: 4px; height: 4px; border-radius: 50%; background: var(--bronze); flex-shrink: 0;
   }
   .price-item-cost {
     font-family: 'IBM Plex Mono', monospace;
     color: var(--bronze-soft);
     font-weight: 500;
-    font-size: 10.5px;
+    font-size: 10px;
     white-space: nowrap;
     margin-left: 8px;
+    flex-shrink: 0;
   }
   .price-empty-hint {
-    font-size: 11px;
+    font-size: 10.5px;
     color: var(--muted);
     text-align: center;
-    padding: 10px 4px;
-    line-height: 1.5;
-  }
-  .price-disclaimer {
-    font-size: 9.5px;
-    color: #7a766e;
+    padding: 8px 4px;
     line-height: 1.4;
-    border-top: 1px dashed rgba(255, 255, 255, 0.06);
-    padding-top: 8px;
   }
   .price-inclusions {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
-    margin-bottom: 8px;
+    gap: 4px;
+    margin-bottom: 6px;
   }
   .price-inc-tag {
-    font-size: 9.5px;
+    font-size: 9px;
     color: var(--green);
     background: rgba(111, 174, 138, 0.1);
     border: 0.5px solid rgba(111, 174, 138, 0.25);
     border-radius: 4px;
-    padding: 2px 5px;
+    padding: 1.5px 5px;
+  }
+  .price-disclaimer {
+    font-size: 8.5px;
+    color: #7a766e;
+    line-height: 1.35;
+    border-top: 1px dashed rgba(255, 255, 255, 0.06);
+    padding-top: 6px;
   }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -482,16 +523,16 @@
     </div>
 
     <!-- 3D Controls Sidebar -->
-    <div id="sidebarLayout" style="width: 340px; background: #14181a; border-left: 1px solid #2e3436; padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; z-index: 2;">
+    <div id="sidebarLayout">
       
-      <button id="toggleWireframeBtn" class="btn btn-outline" style="border-color:#6fae8a; color:#6fae8a; margin-bottom: 10px;">
+      <button id="toggleWireframeBtn" class="btn btn-outline" style="border-color:#6fae8a; color:#6fae8a; margin-bottom: 4px;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:6px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
         ซ่อนเส้นโครงตาข่าย (Wireframe)
       </button>
 
-      <div style="color:#e3c390; font-size:12px; letter-spacing:0.1em; margin-bottom:4px; font-family:'IBM Plex Mono',monospace;">3D NOSE ADJUSTMENTS</div>
+      <div style="color:#e3c390; font-size:11px; letter-spacing:0.1em; font-family:'IBM Plex Mono',monospace;">3D NOSE ADJUSTMENTS</div>
 
-      <button id="threeAiBtn" class="btn btn-outline" style="border-color:#6fae8a; color:#6fae8a; margin-bottom: 8px;">
+      <button id="threeAiBtn" class="btn btn-outline" style="border-color:#6fae8a; color:#6fae8a; margin-bottom: 4px;">
         ✨ AI วิเคราะห์ & ปรับทรงจมูกอัตโนมัติ
       </button>
 
@@ -528,7 +569,7 @@
       <div id="priceEstimationCard" class="price-card">
         <div class="price-card-header">
           <div class="price-card-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--bronze-soft);"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="7" cy="15" r="1.5" fill="currentColor"/><line x1="12" y1="15" x2="17" y2="15"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--bronze-soft);"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="7" cy="15" r="1.5" fill="currentColor"/><line x1="12" y1="15" x2="17" y2="15"/></svg>
             <span>ประมาณการค่ารักษา</span>
           </div>
           <span class="price-card-badge">LIVE 3D</span>
@@ -540,26 +581,22 @@
           <div id="priceTechniqueTag" class="price-technique-tag">โครงสร้างเดิม (ไม่มีการผ่าตัด)</div>
         </div>
 
-        <div style="font-size: 10px; color: var(--muted); letter-spacing: 0.04em; margin-bottom: 6px; font-family: 'IBM Plex Mono', monospace;">
-          รายการหัตถการตามทรง 3D ที่ปรับ:
-        </div>
-
         <div id="priceItemsList" class="price-list">
-          <div class="price-empty-hint">ยังไม่มีการปรับแต่งทรงจมูก<br>ขยับ Slider ด้านบนเพื่อดูการประเมินราคา</div>
+          <div class="price-empty-hint">ยังไม่มีการปรับแต่งทรงจมูก<br>ขยับ Slider เพื่อดูการประเมินราคา</div>
         </div>
 
         <div class="price-inclusions">
           <span class="price-inc-tag">✓ ซิลิโคน/วัสดุมาตรฐาน</span>
-          <span class="price-inc-tag">✓ ยา & ตัดไหม</span>
+          <span class="price-inc-tag">✓ ค่ายา & ตัดไหม</span>
           <span class="price-inc-tag">✓ ประกันทรง 1 ปี</span>
         </div>
 
         <div class="price-disclaimer">
-          * ราคาเป็นการประเมินเบื้องต้นตามหัตถการในคลินิกชั้นนำ อาจแตกต่างตามเทคนิคแพทย์ ชนิดวัสดุ และโครงสร้างเดิม
+          * ราคาเป็นการประเมินเบื้องต้น อาจแตกต่างตามโครงสร้างเดิมและเทคนิคแพทย์
         </div>
       </div>
 
-      <button id="threeCaptureBtn" class="btn primary" style="margin-top: 10px;">
+      <button id="threeCaptureBtn" class="btn primary" style="margin-top: 4px;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px; margin-right:4px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
         บันทึกรูปภาพ 3D
       </button>
@@ -569,7 +606,7 @@
         กดค้างเพื่อดูต้นฉบับ (Before)
       </button>
 
-      <button id="proceedToEditorBtn" class="btn btn-outline" style="border-color:#2e3436; color:#9a958c; margin-top: auto;">
+      <button id="proceedToEditorBtn" class="btn btn-outline" style="border-color:#2e3436; color:#9a958c; margin-top: 4px; margin-bottom: 12px;">
         กลับไปมุมมอง 2D
       </button>
 
@@ -2198,7 +2235,7 @@
   closeThreeBtn.addEventListener('click', close3DAndProceed);
   document.getElementById('proceedToEditorBtn').addEventListener('click', close3DAndProceed);
 
-  // ==========================================
+    // ==========================================
   // NOSE SURGERY PRICE ESTIMATION ENGINE
   // ==========================================
   function calculateNoseProcedures(bridge, hump, alar, width, tip, rotation, proj) {
@@ -2209,27 +2246,27 @@
       if (bridge <= 45) {
         items.push({
           id: 'bridge_std',
-          name: 'เสริมสันจมูก ซิลิโคนพรีเมียม (USA Medical Grade)',
+          name: 'เสริมสันจมูก (ซิลิโคน USA)',
           min: 25000,
           max: 45000,
-          detail: `ยกสันโด่งเป็นธรรมชาติ +${bridge}%`
+          detail: `ยกสัน +${bridge}%`
         });
       } else {
         items.push({
           id: 'bridge_high',
-          name: 'เสริมสันจมูก เหลาพิเศษ + เสริมเนื้อเยื่อเทียม',
+          name: 'เสริมสันโด่ง (+เนื้อเยื่อเทียม)',
           min: 45000,
           max: 75000,
-          detail: `ยกสันโด่งพิเศษ +${bridge}%`
+          detail: `ยกโด่งพิเศษ +${bridge}%`
         });
       }
     } else if (bridge < -15) {
       items.push({
         id: 'bridge_reduce',
-        name: 'ผ่าตัดปรับลดระดับความสูงสันจมูก',
+        name: 'ปรับลดความสูงสันจมูก',
         min: 25000,
         max: 45000,
-        detail: `ลดระดับสัน ${bridge}%`
+        detail: `ลดระดับ ${bridge}%`
       });
     }
 
@@ -2238,7 +2275,7 @@
       if (hump <= 45) {
         items.push({
           id: 'hump_rasp',
-          name: 'ตะไบกระดูกฮัมพ์ ปรับสโลปเนียนรับหน้าผาก',
+          name: 'ตะไบฮัมพ์ ปรับสโลปเนียน',
           min: 15000,
           max: 30000,
           detail: `ตะไบฮัมพ์ ${hump}%`
@@ -2246,19 +2283,19 @@
       } else {
         items.push({
           id: 'hump_resect',
-          name: 'ตอกฐานปรับแนวกระดูกฮัมพ์ + กรอสันกระดูก',
+          name: 'ตอกฐานปรับแนวกระดูกฮัมพ์',
           min: 30000,
           max: 55000,
-          detail: `ปรับโครงสร้างฮัมพ์ ${hump}%`
+          detail: `ปรับโครงสร้าง ${hump}%`
         });
       }
     } else if (hump < -15) {
       items.push({
         id: 'slope_add',
-        name: 'ปรับแต่งสโลปละมุน (Slope Enhancement)',
+        name: 'ปรับแต่งสโลปหวานละมุน',
         min: 15000,
         max: 35000,
-        detail: `แต่งความโค้งสโลป ${Math.abs(hump)}%`
+        detail: `สโลป ${Math.abs(hump)}%`
       });
     }
 
@@ -2267,27 +2304,27 @@
       if (alar >= -35) {
         items.push({
           id: 'alar_soft',
-          name: 'เย็บกระชับปีกจมูกม้วนใน (Flap Technique แผลใน)',
+          name: 'เย็บกระชับปีก (เทคนิคซ่อนแผล)',
           min: 18000,
           max: 28000,
-          detail: `ลดขนาดปีก ${Math.abs(alar)}%`
+          detail: `ลดปีก ${Math.abs(alar)}%`
         });
       } else {
         items.push({
           id: 'alar_full',
-          name: 'ผ่าตัดตัดปีกจมูก + ปรับฐานปีก (Alarplasty)',
+          name: 'ตัดปีกจมูก (Alarplasty)',
           min: 28000,
           max: 45000,
-          detail: `ลดปีกแคบเรียว ${Math.abs(alar)}%`
+          detail: `ตัดปีกเรียว ${Math.abs(alar)}%`
         });
       }
     } else if (alar > 15) {
       items.push({
         id: 'alar_expand',
-        name: 'ปรับแต่งโครงสร้างปีกและรูจมูก',
+        name: 'ปรับมิติโครงสร้างปีกจมูก',
         min: 20000,
         max: 40000,
-        detail: `ปรับมิติปีก +${alar}%`
+        detail: `ขยายปีก +${alar}%`
       });
     }
 
@@ -2295,10 +2332,10 @@
     if (Math.abs(width) > 12) {
       items.push({
         id: 'osteotomy',
-        name: 'ตอกยุบฐานกระดูกจมูกให้เรียวสวย (Osteotomy)',
+        name: 'ตอกยุบฐานกระดูกจมูกเรียว',
         min: 20000,
         max: 40000,
-        detail: width < 0 ? `บีบกระดูกสันแคบลง ${Math.abs(width)}%` : `ขยายมิติฐาน ${width}%`
+        detail: width < 0 ? `บีบฐานกระดูก ${Math.abs(width)}%` : `ปรับฐาน ${width}%`
       });
     }
 
@@ -2306,18 +2343,18 @@
     if (tip < -10) {
       items.push({
         id: 'tip_refine',
-        name: 'เย็บอินเตอร์โดม + ตัดไขมันส่วนเกินปลายจมูก',
+        name: 'เย็บอินเตอร์โดม / แต่งปลาย',
         min: 15000,
         max: 35000,
-        detail: `ลดขนาดปลายมน ${Math.abs(tip)}%`
+        detail: `ลดปลายมน ${Math.abs(tip)}%`
       });
     } else if (tip > 15) {
       items.push({
         id: 'tip_enlarge',
-        name: 'ปลูกถ่ายเนื้อเยื่อแต่งปลายหยดน้ำ',
+        name: 'ปลูกถ่ายเนื้อเยื่อแต่งปลาย',
         min: 18000,
         max: 38000,
-        detail: `เพิ่มมิติเนื้อปลาย +${tip}%`
+        detail: `เติมเนื้อปลาย +${tip}%`
       });
     }
 
@@ -2325,10 +2362,10 @@
     if (Math.abs(rotation) > 12) {
       items.push({
         id: 'septal_extension',
-        name: 'ยืดผนังกั้นจมูก + ล็อคแกนปลายเชิด (Septal Extension)',
+        name: 'ยืดผนังกั้นปลายเชิดพุ่ง',
         min: 30000,
         max: 65000,
-        detail: rotation > 0 ? `ยกปลายเชิด +${rotation}°` : `ปรับมุมปลายงุ้ม ${rotation}°`
+        detail: rotation > 0 ? `เชิด +${rotation}°` : `งุ้ม ${rotation}°`
       });
     }
 
@@ -2337,27 +2374,27 @@
       if (proj <= 40) {
         items.push({
           id: 'ear_cartilage',
-          name: 'รองปลายกระดูกอ่อนหลังหู / เนื้อเยื่อเทียมกันทะลุ',
+          name: 'รองปลายกระดูกอ่อนหลังหู',
           min: 18000,
           max: 35000,
-          detail: `ปลายพุ่งมีมิติ +${proj}%`
+          detail: `ปลายพุ่ง +${proj}%`
         });
       } else {
         items.push({
           id: 'rib_cartilage',
-          name: 'สร้างโครงสร้างปลายพุ่งด้วยกระดูกอ่อนซี่โครง/กอร์เท็กซ์',
+          name: 'ยืดปลายพุ่ง (กระดูกอ่อนซี่โครง)',
           min: 50000,
           max: 95000,
-          detail: `ปลายพุ่งพิเศษ +${proj}%`
+          detail: `พุ่งพิเศษ +${proj}%`
         });
       }
     } else if (proj < -15) {
       items.push({
         id: 'proj_reduce',
-        name: 'ปรับลดความพุ่งของปลายจมูกให้รับใบหน้า',
+        name: 'ปรับลดความพุ่งปลายจมูก',
         min: 18000,
         max: 35000,
-        detail: `ลดความพุ่ง ${proj}%`
+        detail: `ลดพุ่ง ${proj}%`
       });
     }
 
@@ -2447,7 +2484,7 @@
       techniqueEl.style.background = 'rgba(154, 149, 140, 0.15)';
       techniqueEl.style.color = 'var(--muted)';
       techniqueEl.style.borderColor = 'rgba(154, 149, 140, 0.3)';
-      listEl.innerHTML = '<div class="price-empty-hint">ยังไม่มีการปรับแต่งทรงจมูก<br>ขยับ Slider ด้านบนเพื่อดูการประเมินราคา</div>';
+      listEl.innerHTML = '<div class="price-empty-hint">ยังไม่มีการปรับแต่งทรงจมูก<br>ขยับ Slider เพื่อดูการประเมินราคา</div>';
     } else {
       priceValEl.textContent = '฿' + res.totalMin.toLocaleString() + ' – ฿' + res.totalMax.toLocaleString();
       techniqueEl.textContent = res.technique;
@@ -2462,8 +2499,8 @@
             <div class="price-item-name">
               <span class="price-item-dot"></span>
               <div>
-                <div>${item.name}</div>
-                <div style="font-size:9.5px; color:var(--muted); font-family:'IBM Plex Mono',monospace;">${item.detail}</div>
+                <span style="color:var(--cream); font-weight:500;">${item.name}</span>
+                <span style="font-size:9px; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-left:3px;">(${item.detail})</span>
               </div>
             </div>
             <div class="price-item-cost">฿${item.min.toLocaleString()} - ฿${item.max.toLocaleString()}</div>

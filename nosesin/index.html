@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
 <style>
   :root{
     --bg:#14181a; --bg-2:#1b2123; --card:#1e2426;
@@ -23,9 +24,25 @@
   .wrap{max-width:1160px; margin:0 auto; padding:0 32px;}
   .hidden{display:none !important;}
 
+  /* Responsive Mobile Layout */
+  @media (max-width: 768px) {
+    html, body { overflow-x: hidden; }
+    .wrap { padding: 0 16px !important; }
+    #mainLayout { flex-direction: column !important; }
+    #threeContainer { height: 50vh !important; flex: none !important; }
+    #sidebarLayout { width: 100% !important; height: auto !important; flex: 1 !important; border-left: none !important; border-top: 1px solid var(--line); padding: 16px !important; }
+    #threeModal { top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; border-radius: 0 !important; border: none !important; }
+    nav ul { display: none !important; }
+    .nav-status { font-size: 10px; }
+    .hero h1 { font-size: 26px !important; line-height: 1.3 !important; }
+    .hero { padding: 32px 0 !important; }
+    .tool-controls { padding: 20px 16px !important; }
+    #scanMetrics { transform: scale(0.65); transform-origin: top left; top: 12px !important; left: 12px !important; }
+  }
+
   /* ---------- login screen ---------- */
   #loginScreen{
-    position:fixed; inset:0; z-index:200; background:radial-gradient(circle at 50% 20%, #1c2224, #101415 70%);
+    position:fixed; top:0; left:0; width:100%; height:100%; z-index:200; background:radial-gradient(circle at 50% 20%, #1c2224, #101415 70%);
     display:flex; align-items:center; justify-content:center; padding:24px; transition:opacity .5s ease;
   }
   .login-card{width:100%; max-width:400px; text-align:center;}
@@ -39,26 +56,59 @@
     border-radius:50%; overflow:hidden; background:#0c0f10; border:1px solid var(--line);
   }
   .scan-frame canvas{width:100%; height:100%; object-fit:cover; display:block;}
-  .scan-ring{position:absolute; inset:0; width:240px; height:240px; transform:rotate(-90deg);}
+  .scan-ring{position:absolute; top:0; left:0; width:100%; height:100%; width:240px; height:240px; transform:rotate(-90deg);}
   .scan-ring circle{fill:none; stroke-width:3;}
   .scan-ring .bg{stroke:rgba(255,255,255,0.08);}
   .scan-ring .fg{stroke:var(--bronze); stroke-linecap:round; transition:stroke-dashoffset .1s linear;}
   .scan-check{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    position:absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center;
     background:rgba(20,24,26,0.55); opacity:0; transition:opacity .3s;
   }
   .scan-check.show{opacity:1;}
   .scan-check svg{width:56px; height:56px;}
   .scan-placeholder{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    color:var(--muted); font-size:12px; flex-direction:column; gap:8px;
+    position:absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    color:var(--muted); font-size:12px; flex-direction:column; gap:8px; text-align:center; padding: 10px;
   }
+  
+  /* Loading Spinner */
+  .spinner {
+    width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%;
+    border-top-color: var(--bronze); animation: spin 1s ease-in-out infinite; margin-bottom: 5px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   .status-text{font-size:14px; color:var(--bronze-soft); min-height:20px; margin-bottom:20px;}
   .btn{font-family:'Inter',sans-serif; font-size:13px; padding:11px 22px; border-radius:8px; border:0.5px solid var(--line); background:transparent; color:var(--cream); cursor:pointer; transition:all .2s;}
   .btn:hover{border-color:var(--bronze-deep); color:var(--bronze-soft);}
   .btn.primary{background:var(--bronze); border-color:var(--bronze); color:#1b1204; font-weight:500; width:100%;}
   .btn.primary:hover{background:var(--bronze-soft);}
+  .btn:active{transform: scale(0.98);}
+  
+  .btn-outline { border: 1px solid var(--bronze-deep); color: var(--bronze-soft); display: flex; align-items: center; justify-content: center; gap: 8px;}
+  .btn-outline:hover { background: rgba(201, 154, 91, 0.1); }
+  .btn-outline:active { background: rgba(201, 154, 91, 0.2); }
+  .btn-outline.active { background: rgba(111, 174, 138, 0.2); border-color: var(--green); color: var(--green); }
+
+  /* ---------- before/after split compare ---------- */
+  .before-canvas{position:absolute; top:0; left:0; z-index:6; pointer-events:none;}
+  .compare-divider{position:absolute; top:0; bottom:0; width:2px; background:var(--bronze); z-index:7; transform:translateX(-1px); cursor:ew-resize; pointer-events:auto;}
+  .compare-handle{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:30px; height:30px; border-radius:50%; background:var(--bronze); color:#14181a; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:bold; box-shadow:0 2px 10px rgba(0,0,0,0.5);}
+  .compare-label{position:absolute; top:12px; z-index:8; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.05em; background:rgba(20,24,26,0.75); color:var(--bronze-soft); padding:5px 10px; border-radius:20px; pointer-events:none;}
+  .compare-label-before{left:12px;}
+  .compare-label-after{right:12px;}
+
+  /* ---------- analysis nudge banner (connects step 1 -> step 2) ---------- */
+  .analysis-nudge{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; background:rgba(201,154,91,0.08); border:1px solid var(--bronze-deep); border-radius:10px; padding:12px 16px; margin-bottom:16px;}
+  .analysis-nudge-text{font-size:12px; color:var(--bronze-soft); line-height:1.5;}
+  .analysis-nudge-text strong{color:var(--cream); display:block; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.05em; margin-bottom:2px;}
+  .analysis-nudge .btn{padding:7px 14px; font-size:11px; white-space:nowrap; flex-shrink:0;}
+  .analysis-nudge.done{background:rgba(111,174,138,0.08); border-color:var(--green);}
+  .analysis-nudge.done .analysis-nudge-text strong{color:var(--green);}
+  
+  .upload-btn{font-family:'Inter',sans-serif; font-size:13px; padding:11px 22px; border-radius:8px; border:1px dashed var(--bronze-deep); background:transparent; color:var(--bronze-soft); cursor:pointer; width:100%; margin-top: 10px; transition:all .2s; display: flex; align-items: center; justify-content: center; gap: 8px;}
+  .upload-btn:hover{background: rgba(201,154,91,0.1);}
+
   .skip-link{display:block; margin-top:16px; font-size:12px; color:var(--muted); text-decoration:underline; cursor:pointer; background:none; border:none;}
   .skip-link:hover{color:var(--bronze-soft);}
   .login-note{font-size:11px; color:var(--muted); margin-top:24px; line-height:1.7; border-top:0.5px solid var(--line); padding-top:16px;}
@@ -87,7 +137,15 @@
   .tool-cam-side{position:relative; background:#101415; display:flex; align-items:center; justify-content:center; padding:24px; min-height:400px;}
   .live-frame{position:relative; border-radius:10px; overflow:hidden; line-height:0; box-shadow:0 0 0 0.5px var(--line); width:100%; max-width:440px; aspect-ratio:4/3; background:#0c0f10;}
   .live-frame canvas{width:100%; height:100%; display:block; object-fit:cover;}
-  .live-badge{position:absolute; top:12px; left:12px; display:flex; align-items:center; gap:6px; font-size:11px; font-family:'IBM Plex Mono',monospace; background:rgba(20,24,26,0.7); padding:5px 10px; border-radius:20px; color:var(--bronze-soft);}
+  #dualViewWrapper{display:none; width:100%; gap:8px;}
+  #dualViewWrapper.active{display:flex !important;}
+  #dualViewWrapper > div{flex:1; min-width:0;}
+  
+  .ai-hud{position:absolute; top:12px; right:12px; background:rgba(0,0,0,0.6); padding:10px; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#0f0; z-index:10; pointer-events:none; border:1px solid #0f0; line-height:1.4;}
+  .ai-hud div{margin-bottom:4px;}
+  .ai-hud span{color:#fff;}
+  
+  .live-badge{position:absolute; top:12px; left:12px; display:flex; align-items:center; gap:6px; font-size:11px; font-family:'IBM Plex Mono',monospace; background:rgba(20,24,26,0.7); padding:5px 10px; border-radius:20px; color:var(--bronze-soft); z-index:10;}
   .live-badge .dot{width:6px; height:6px; border-radius:50%; background:#e0554f;}
   .cam-fallback{position:absolute; inset:24px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; color:var(--muted); font-size:13px; text-align:center; padding:20px;}
 
@@ -97,10 +155,14 @@
   .slider-row{display:flex; flex-direction:column; gap:8px;}
   .slider-row .label-row{display:flex; justify-content:space-between; font-size:13px;}
   .slider-row .label-row span:last-child{color:var(--bronze-soft); font-family:'IBM Plex Mono',monospace; font-size:12px;}
-  input[type=range]{-webkit-appearance:none; width:100%; height:2px; background:var(--line); border-radius:2px; outline:none;}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--bronze); cursor:pointer; border:2px solid var(--bg);}
+  input[type=range]{appearance:none; -webkit-appearance:none; width:100%; height:2px; background:var(--line); border-radius:2px; outline:none;}
+  input[type=range]::-webkit-slider-thumb{appearance:none; -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--bronze); cursor:pointer; border:2px solid var(--bg);}
   input[type=range]::-moz-range-thumb{width:16px; height:16px; border-radius:50%; background:var(--bronze); cursor:pointer; border:2px solid var(--bg);}
-  .tool-actions{display:flex; gap:10px;}
+  
+  .tool-actions{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+  .tool-actions .btn.full-width { grid-column: span 2; }
+  @media (max-width: 480px) { .tool-actions { grid-template-columns: 1fr; } .tool-actions .btn.full-width { grid-column: span 1; } }
+
   .tool-note{font-size:12px; color:var(--muted); border-top:0.5px solid var(--line); padding-top:16px; margin-top:4px;}
   .tool-note strong{color:var(--bronze-soft); font-weight:500;}
 
@@ -144,9 +206,217 @@
   footer .wrap{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;}
   footer .brand{font-size:15px;}
   footer p{font-size:13px; color:var(--muted);}
+
+  /* ---------- 3D Sidebar Layout & Anti-Squish ---------- */
+  #sidebarLayout {
+    width: 350px !important;
+    background: #14181a !important;
+    border-left: 1px solid #2e3436 !important;
+    padding: 16px 16px 24px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    z-index: 2 !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(201, 154, 91, 0.4) rgba(20, 24, 26, 0.6);
+  }
+  #sidebarLayout::-webkit-scrollbar {
+    width: 6px;
+  }
+  #sidebarLayout::-webkit-scrollbar-track {
+    background: rgba(12, 15, 16, 0.6);
+  }
+  #sidebarLayout::-webkit-scrollbar-thumb {
+    background: rgba(201, 154, 91, 0.35);
+    border-radius: 4px;
+  }
+  #sidebarLayout::-webkit-scrollbar-thumb:hover {
+    background: var(--bronze);
+  }
+
+  /* Prevent any item inside sidebar from being squished */
+  #sidebarLayout > * {
+    flex-shrink: 0 !important;
+  }
+
+  #sidebarLayout .slider-row {
+    gap: 4px;
+    margin-bottom: 2px;
+  }
+  #sidebarLayout .slider-row .label-row {
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  /* ---------- Price Estimation Card (Compact & Flawless) ---------- */
+  .price-card {
+    background: linear-gradient(165deg, rgba(28, 34, 36, 0.95), rgba(18, 22, 24, 0.98));
+    border: 1px solid rgba(201, 154, 91, 0.3);
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    position: relative;
+    overflow: visible !important;
+    flex-shrink: 0 !important;
+    margin: 4px 0;
+  }
+  .price-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--bronze), transparent);
+    opacity: 0.9;
+  }
+  .price-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .price-card-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--cream);
+  }
+  .price-card-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    background: rgba(111, 174, 138, 0.15);
+    color: var(--green);
+    border: 0.5px solid rgba(111, 174, 138, 0.4);
+    padding: 1px 6px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+  }
+  .price-total-box {
+    background: rgba(12, 15, 16, 0.7);
+    border: 1px solid rgba(201, 154, 91, 0.25);
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: center;
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .price-total-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+  }
+  .price-total-val {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--bronze-soft);
+    text-shadow: 0 0 16px rgba(201, 154, 91, 0.35);
+    line-height: 1.25;
+    margin: 2px 0 4px 0;
+  }
+  .price-technique-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(201, 154, 91, 0.12);
+    color: var(--bronze);
+    border: 0.5px solid rgba(201, 154, 91, 0.3);
+  }
+  .price-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 8px;
+    max-height: 130px;
+    overflow-y: auto;
+    padding-right: 3px;
+  }
+  .price-list::-webkit-scrollbar {
+    width: 4px;
+  }
+  .price-list::-webkit-scrollbar-thumb {
+    background: rgba(201, 154, 91, 0.3);
+    border-radius: 4px;
+  }
+  .price-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10.5px;
+    background: rgba(255, 255, 255, 0.025);
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  .price-item-name {
+    color: var(--cream);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    text-align: left;
+    min-width: 0;
+  }
+  .price-item-name > div {
+    min-width: 0;
+    line-height: 1.25;
+  }
+  .price-item-dot {
+    width: 4px; height: 4px; border-radius: 50%; background: var(--bronze); flex-shrink: 0;
+  }
+  .price-item-cost {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--bronze-soft);
+    font-weight: 500;
+    font-size: 10px;
+    white-space: nowrap;
+    margin-left: 8px;
+    flex-shrink: 0;
+  }
+  .price-empty-hint {
+    font-size: 10.5px;
+    color: var(--muted);
+    text-align: center;
+    padding: 8px 4px;
+    line-height: 1.4;
+  }
+  .price-inclusions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  .price-inc-tag {
+    font-size: 9px;
+    color: var(--green);
+    background: rgba(111, 174, 138, 0.1);
+    border: 0.5px solid rgba(111, 174, 138, 0.25);
+    border-radius: 4px;
+    padding: 1.5px 5px;
+  }
+  .price-disclaimer {
+    font-size: 8.5px;
+    color: #7a766e;
+    line-height: 1.35;
+    border-top: 1px dashed rgba(255, 255, 255, 0.06);
+    padding-top: 6px;
+  }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/delaunator@5.0.0/delaunator.min.js"></script>
 </head>
 <body>
+
+
 
 <video id="video" autoplay playsinline muted class="hidden"></video>
 
@@ -176,11 +446,176 @@
 
     <p class="status-text" id="statusText">พร้อมเริ่มสแกน</p>
     <button class="btn primary" id="startScanBtn">เริ่มสแกนใบหน้า</button>
+    
+    <input type="file" id="photoUpload" accept="image/*" class="hidden">
+    <button class="upload-btn" id="uploadBtnLabel">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      อัปโหลดรูปภาพแทน
+    </button>
+    
     <button class="skip-link" id="skipBtn">ข้ามการสแกนและเข้าใช้งานเลย</button>
 
     <p class="login-note"><strong>หมายเหตุ:</strong> การสแกนใบหน้านี้เป็นการสาธิตเพื่อการศึกษา (โปรเจคจำลอง) ไม่ใช่ระบบยืนยันตัวตนที่ปลอดภัยสำหรับใช้งานจริง ภาพจากกล้องประมวลผลในเบราว์เซอร์ของคุณเท่านั้น ไม่ถูกส่งขึ้นเซิร์ฟเวอร์ใดๆ</p>
   </div>
 </div>
+
+
+<!-- 3D Modal — Professional Medical Scanner UI -->
+<div id="threeModal" class="hidden" style="position:fixed; inset:0; z-index:10000; background:#0d1012; display:flex; flex-direction:column;">
+  <!-- Header -->
+  <div style="padding:14px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:0.5px solid #2e3436; z-index:10001; background:#14181a;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="width:10px; height:10px; border-radius:50%; background:#6fae8a; box-shadow:0 0 8px #6fae8a; animation: pulse3d 1.5s infinite;"></div>
+      <h3 style="margin:0; font-size:15px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.05em; color:#e3c390;">3D FACE SCAN</h3>
+    </div>
+    <button id="closeThreeBtn" style="background:rgba(255,255,255,0.05); border:1px solid #2e3436; color:#9a958c; font-size:20px; cursor:pointer; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">&times;</button>
+  </div>
+
+  <!-- Main 3D Area -->
+  <div id="mainLayout" style="flex:1; display:flex; overflow:hidden;">
+    
+    <!-- 3D Container -->
+    <div id="threeContainer" style="flex:1; position:relative; z-index:1;"></div>
+
+    <!-- Face ID Interactive overlay -->
+    <div id="faceIdOverlay" class="hidden" style="position:absolute; inset:0; top:65px; z-index:10002; background:#0d1012; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+      <h3 id="faceIdOverlayTitle" style="color:#e3c390; font-family:'IBM Plex Mono',monospace; letter-spacing:0.05em; margin-bottom:15px; font-size:14px;">1. เลือกกรอบใบหน้าของคุณ</h3>
+      
+      <!-- Shape Selector -->
+      <div id="shapeSelectorWrapper" style="display:flex; gap:8px; max-width:90%; overflow-x:auto; margin-bottom:15px; padding:4px 0; scrollbar-width:none; -webkit-overflow-scrolling: touch;">
+        <!-- Buttons added via JS -->
+      </div>
+      
+      <button id="startScanPhaseBtn" class="btn primary" style="max-width: 280px; margin-bottom: 20px;">
+        ยืนยันโครงหน้าและเริ่มสแกน
+      </button>
+
+      <div style="position:relative; width:280px; height:280px; margin-bottom:30px;">
+        <canvas id="scanLiveCanvas" width="280" height="280" style="border-radius:50%; object-fit:cover; transform:scaleX(-1); box-shadow:0 0 30px rgba(111,174,138,0.15);"></canvas>
+        
+        <!-- Shape Guide (Wireframe) -->
+        <svg id="shapeGuideSvg" viewBox="0 0 140 140" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;">
+          <path id="shapeGuidePath" d="" fill="none" stroke="#e3c390" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.8" style="transition: d 0.3s ease;"/>
+        </svg>
+
+        <svg viewBox="0 0 140 140" style="position:absolute; top:0; left:0; width:100%; height:100%; transform:rotate(-90deg); pointer-events:none;">
+          <circle cx="70" cy="70" r="66" fill="none" stroke="#2e3436" stroke-width="4"/>
+          <circle id="faceIdRing" cx="70" cy="70" r="66" fill="none" stroke="#6fae8a" stroke-width="4" stroke-dasharray="414.7" stroke-dashoffset="414.7" stroke-linecap="round" style="transition: stroke-dashoffset 0.4s ease;"/>
+        </svg>
+      </div>
+      <div id="faceIdPrompt" style="font-size:20px; font-weight:bold; color:#f2ece2; text-align:center; height:80px; line-height:1.4;">
+        วางใบหน้าในกรอบ<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">และหันหน้าไปทางซ้ายช้าๆ</span>
+      </div>
+    </div>
+
+    <!-- Scan metrics overlay (top-left) -->
+    <div id="scanMetrics" class="hidden" style="position:absolute; top:80px; left:20px; z-index:10001; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#6fae8a; line-height:2; background:rgba(13,16,18,0.7); padding:14px 18px; border-radius:10px; border:1px solid rgba(111,174,138,0.2); backdrop-filter:blur(8px);">
+      <div style="color:#e3c390; font-size:11px; letter-spacing:0.1em; margin-bottom:6px;">FACE ANALYSIS</div>
+      <div>VERTICES: <span style="color:#f2ece2;">468</span></div>
+      <div>TRIANGLES: <span id="triCount" style="color:#f2ece2;">—</span></div>
+      <div>TEXTURE: <span style="color:#6fae8a;">MAPPED ✓</span></div>
+      <div>WIREFRAME: <span style="color:#6fae8a;">ON ✓</span></div>
+      <div style="margin-top:8px; color:#e3c390; font-size:11px; letter-spacing:0.1em;">MEASUREMENTS</div>
+      <div>FACE WIDTH: <span id="metricFaceW" style="color:#f2ece2;">—</span></div>
+      <div>FACE HEIGHT: <span id="metricFaceH" style="color:#f2ece2;">—</span></div>
+      <div>NOSE LENGTH: <span id="metricNoseL" style="color:#f2ece2;">—</span></div>
+      <div>JAW WIDTH: <span id="metricJawW" style="color:#f2ece2;">—</span></div>
+    </div>
+
+    <!-- 3D Controls Sidebar -->
+    <div id="sidebarLayout">
+      
+      <button id="toggleWireframeBtn" class="btn btn-outline" style="border-color:#6fae8a; color:#6fae8a; margin-bottom: 4px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:6px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        ซ่อนเส้นโครงตาข่าย (Wireframe)
+      </button>
+
+      <div style="color:#e3c390; font-size:11px; letter-spacing:0.1em; font-family:'IBM Plex Mono',monospace;">3D NOSE ADJUSTMENTS</div>
+
+      <button id="threeAiBtn" class="btn btn-outline" style="border-color:#6fae8a; color:#6fae8a; margin-bottom: 4px;">
+        ✨ AI วิเคราะห์ & ปรับทรงจมูกอัตโนมัติ
+      </button>
+
+      <div class="slider-row">
+        <div class="label-row"><span>ดั้ง/สันจมูก (Bridge)</span><span id="tBridgeVal" class="mono">0%</span></div>
+        <input type="range" id="tBridgeSlider" min="-100" max="100" value="0">
+      </div>
+      <div class="slider-row">
+        <div class="label-row"><span>ลดฮัมพ์/สโลป (Hump/Slope)</span><span id="tHumpVal" class="mono">0%</span></div>
+        <input type="range" id="tHumpSlider" min="-100" max="100" value="0">
+      </div>
+      <div class="slider-row">
+        <div class="label-row"><span>ความกว้างปีกจมูก (Alar Width)</span><span id="tAlarVal" class="mono">0%</span></div>
+        <input type="range" id="tAlarSlider" min="-100" max="100" value="0">
+      </div>
+      <div class="slider-row">
+        <div class="label-row"><span>ความกว้างสัน (Bridge Width)</span><span id="tWidthVal" class="mono">0%</span></div>
+        <input type="range" id="tWidthSlider" min="-100" max="100" value="0">
+      </div>
+      <div class="slider-row">
+        <div class="label-row"><span>ปลายจมูก (Tip Size)</span><span id="tTipVal" class="mono">0%</span></div>
+        <input type="range" id="tTipSlider" min="-100" max="100" value="0">
+      </div>
+      <div class="slider-row">
+        <div class="label-row"><span>องศาเชิด (Tip Rotation)</span><span id="tRotationVal" class="mono">0%</span></div>
+        <input type="range" id="tRotationSlider" min="-100" max="100" value="0">
+      </div>
+      <div class="slider-row">
+        <div class="label-row"><span>ความพุ่ง/แสงเงา (Projection)</span><span id="tProjVal" class="mono">0%</span></div>
+        <input type="range" id="tProjSlider" min="-100" max="100" value="0">
+      </div>
+
+      <!-- Price Estimation Card in 3D Sidebar -->
+      <div id="priceEstimationCard" class="price-card">
+        <div class="price-card-header">
+          <div class="price-card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--bronze-soft);"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="7" cy="15" r="1.5" fill="currentColor"/><line x1="12" y1="15" x2="17" y2="15"/></svg>
+            <span>ประมาณการค่ารักษา</span>
+          </div>
+          <span class="price-card-badge">LIVE 3D</span>
+        </div>
+
+        <div class="price-total-box">
+          <div class="price-total-label">ช่วงราคาประเมินรวม (โดยประมาณ)</div>
+          <div id="priceTotalVal" class="price-total-val">฿0</div>
+          <div id="priceTechniqueTag" class="price-technique-tag">โครงสร้างเดิม (ไม่มีการผ่าตัด)</div>
+        </div>
+
+        <div id="priceItemsList" class="price-list">
+          <div class="price-empty-hint">ยังไม่มีการปรับแต่งทรงจมูก<br>ขยับ Slider เพื่อดูการประเมินราคา</div>
+        </div>
+
+        <div class="price-inclusions">
+          <span class="price-inc-tag">✓ ซิลิโคน/วัสดุมาตรฐาน</span>
+          <span class="price-inc-tag">✓ ค่ายา & ตัดไหม</span>
+          <span class="price-inc-tag">✓ ประกันทรง 1 ปี</span>
+        </div>
+
+        <div class="price-disclaimer">
+          * ราคาเป็นการประเมินเบื้องต้น อาจแตกต่างตามโครงสร้างเดิมและเทคนิคแพทย์
+        </div>
+      </div>
+
+      <button id="threeCaptureBtn" class="btn primary" style="margin-top: 4px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px; margin-right:4px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        บันทึกรูปภาพ 3D
+      </button>
+
+      <button id="threeCompareBtn" class="btn btn-outline" style="border-color:#c99a5b; color:#c99a5b;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px; margin-right:4px;"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        กดค้างเพื่อดูต้นฉบับ (Before)
+      </button>
+
+      <button id="proceedToEditorBtn" class="btn btn-outline" style="border-color:#2e3436; color:#9a958c; margin-top: 4px; margin-bottom: 12px;">
+        กลับไปมุมมอง 2D
+      </button>
+
+    </div>
+  </div>
+</div>
+<style>
+  @keyframes pulse3d { 0%,100%{opacity:1} 50%{opacity:0.4} }
+</style>
 
 <!-- ============ APP SCREEN ============ -->
 <div id="appScreen" class="hidden">
@@ -202,34 +637,123 @@
 
   <section class="hero">
     <div class="wrap">
-      <span class="eyebrow">ฟิลเตอร์วิเคราะห์จมูกแบบเรียลไทม์</span>
+      <span class="eyebrow">ขั้นตอนที่ 2 · ปรับแต่งทรงจมูก</span>
       <h1>เปิดกล้อง แล้วดูรูปทรงจมูกใหม่<br><em>ขยับหน้าได้ ฟิลเตอร์ตามหน้าคุณ</em></h1>
       <p class="lead">ระบบตรวจจับตำแหน่งจมูกจากใบหน้าคุณสด ๆ ผ่านกล้อง แล้วปรับสันและปีกจมูกแบบเรียลไทม์ เหมือนฟิลเตอร์กล้อง ไม่มีการบันทึกหรืออัปโหลดวิดีโอที่ไหนทั้งสิ้น</p>
 
       <div class="tool" id="tool">
-        <div class="tool-cam-side">
-          <div class="live-frame" id="liveFrame">
-            <div class="live-badge"><span class="dot"></span>LIVE</div>
+        <div class="tool-cam-side" style="flex-direction:column; padding:16px; gap:10px; align-items:stretch;">
+          <!-- Dual view wrapper: shown when compare mode ON -->
+          <div id="dualViewWrapper" style="display:none; width:100%; gap:8px; flex-direction:row;">
+            <!-- Before (original) -->
+            <div style="flex:1; position:relative; border-radius:10px; overflow:hidden; background:#0c0f10; box-shadow:0 0 0 0.5px var(--line); aspect-ratio:4/3; line-height:0;">
+              <canvas id="beforeSideCanvas" style="width:100%; height:100%; display:block; object-fit:cover;"></canvas>
+              <div style="position:absolute; top:8px; left:8px; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.05em; background:rgba(20,24,26,0.75); color:var(--bronze-soft); padding:4px 9px; border-radius:20px; pointer-events:none;">ต้นฉบับ</div>
+            </div>
+            <!-- After (with filter) -->
+            <div style="flex:1; position:relative; border-radius:10px; overflow:hidden; background:#0c0f10; box-shadow:0 0 0 0.5px var(--line); aspect-ratio:4/3; line-height:0;" id="afterSideWrapper">
+              <div class="ai-hud hidden" id="aiHud" style="top:8px; right:8px;">
+                <div style="color:#fff; border-bottom:1px solid #333; padding-bottom:4px; margin-bottom:6px;">AI TRACKING DATA</div>
+                <div>YAW: <span id="hudYaw">0.0</span>°</div>
+                <div>PITCH: <span id="hudPitch">0.0</span>°</div>
+                <div>SMILE: <span id="hudSmile">0</span>%</div>
+              </div>
+              <div style="position:absolute; top:8px; left:8px; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.05em; background:rgba(20,24,26,0.75); color:var(--bronze-soft); padding:4px 9px; border-radius:20px; pointer-events:none; z-index:10;">หลังปรับ</div>
+            </div>
+          </div>
+          <!-- Single view: shown when compare mode OFF -->
+          <div class="live-frame" id="liveFrame" style="width:100%; max-width:440px; margin:0 auto;">
+            <div class="live-badge"><span class="dot"></span><span id="sourceBadgeText">LIVE</span></div>
+            <div id="captureOverlay" class="hidden" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:20; display:flex; align-items:center; justify-content:center; color:white; font-size:72px; font-weight:bold; text-shadow:0 2px 10px rgba(0,0,0,0.5); pointer-events:none; transition: opacity 0.2s;"></div>
             <div class="cam-fallback hidden" id="camFallback">
               <span>ไม่พบสัญญาณกล้องในหน้านี้ — ลองกลับไปเริ่มสแกนใบหน้าอีกครั้ง</span>
             </div>
           </div>
         </div>
         <div class="tool-controls">
-          <div>
-            <h3>ปรับความแรงฟิลเตอร์</h3>
-            <p>ระบบตรวจจับตำแหน่งจมูกอัตโนมัติจากจุดสังเกตบนใบหน้า (face landmark)</p>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <h3>ปรับความแรงฟิลเตอร์</h3>
+              <p>ระบบตรวจจับตำแหน่งจมูกอัตโนมัติจากจุดสังเกตบนใบหน้า</p>
+            </div>
+            <button class="upload-btn" id="appUploadBtn" style="width:auto; margin:0; padding:6px 12px; font-size:11px;">อัปโหลดรูป</button>
+          </div>
+
+          <div class="analysis-nudge" id="analysisNudge">
+            <div class="analysis-nudge-text">
+              <strong>ขั้นตอนที่ 1 · แนะนำก่อนปรับ</strong>
+              <span id="analysisNudgeMsg">วิเคราะห์โครงหน้าก่อน เพื่อให้ระบบแนะนำทรงจมูกที่เข้ากับใบหน้าคุณที่สุด</span>
+            </div>
+            <button class="btn btn-outline" id="analysisNudgeBtn" style="border-color:var(--bronze-soft);" onclick="document.getElementById('analysis').scrollIntoView({behavior:'smooth', block:'start'})">✨ ดูผลแนะนำ</button>
+          </div>
+          
+          <div class="preset-row" style="display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; padding-bottom:4px;">
+            <button class="btn btn-outline preset-btn" data-preset="[15,-10,15,20,10,20,30]" style="white-space:nowrap; padding: 4px 10px; font-size:12px; border-color:var(--bronze-soft);">💧 ทรงหยดน้ำ</button>
+            <button class="btn btn-outline preset-btn" data-preset="[25,10,25,30,-10,10,40]" style="white-space:nowrap; padding: 4px 10px; font-size:12px; border-color:var(--bronze-soft);">👱‍♀️ ทรงบาร์บี้</button>
+            <button class="btn btn-outline preset-btn" data-preset="[40,20,0,10,-20,-10,50]" style="white-space:nowrap; padding: 4px 10px; font-size:12px; border-color:var(--bronze-soft);">🦅 ทรงสายฝอ</button>
+            <button class="btn btn-outline preset-btn" data-preset="[0,0,0,0,0,0,0]" style="white-space:nowrap; padding: 4px 10px; font-size:12px; border-color:var(--muted);">🔄 คืนค่า</button>
+          </div>
+          
+          <div class="slider-row">
+            <div class="label-row"><span>ดั้ง/สันจมูก (Bridge)</span><span id="bridgeValLabel" class="mono">0%</span></div>
+            <input type="range" id="bridgeSlider" min="-100" max="100" value="0">
           </div>
           <div class="slider-row">
-            <div class="label-row"><span>สันจมูก / ความโด่ง</span><span id="bridgeValLabel" class="mono">0%</span></div>
-            <input type="range" id="bridgeSlider" min="0" max="100" value="35">
+            <div class="label-row"><span>ลดฮัมพ์/สโลป (Hump/Slope)</span><span id="humpValLabel" class="mono">0%</span></div>
+            <input type="range" id="humpSlider" min="-100" max="100" value="0">
           </div>
           <div class="slider-row">
-            <div class="label-row"><span>ความเรียวของปีกจมูก</span><span id="widthValLabel" class="mono">0%</span></div>
-            <input type="range" id="widthSlider" min="0" max="100" value="20">
+            <div class="label-row"><span>ความกว้างปีกจมูก (Alar Width)</span><span id="alarValLabel" class="mono">0%</span></div>
+            <input type="range" id="alarSlider" min="-100" max="100" value="0">
           </div>
+          <div class="slider-row">
+            <div class="label-row"><span>ความกว้างสัน (Bridge Width)</span><span id="widthValLabel" class="mono">0%</span></div>
+            <input type="range" id="widthSlider" min="-100" max="100" value="0">
+          </div>
+          <div class="slider-row">
+            <div class="label-row"><span>ปลายจมูก (Tip Size)</span><span id="tipValLabel" class="mono">0%</span></div>
+            <input type="range" id="tipSlider" min="-100" max="100" value="0">
+          </div>
+          <div class="slider-row">
+            <div class="label-row"><span>องศาเชิด (Tip Rotation)</span><span id="rotationValLabel" class="mono">0%</span></div>
+            <input type="range" id="rotationSlider" min="-100" max="100" value="0">
+          </div>
+          <div class="slider-row">
+            <div class="label-row"><span>ความพุ่ง/แสงเงา (Projection)</span><span id="projectionValLabel" class="mono">0%</span></div>
+            <input type="range" id="projectionSlider" min="-100" max="100" value="0">
+          </div>
+
+          <!-- 2D Price Estimate Preview -->
+          <div id="priceEstimationBar2D" style="background: rgba(30,36,38,0.7); border: 1px solid rgba(201,154,91,0.25); border-radius: 10px; padding: 10px 14px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(8px);">
+            <div>
+              <div style="font-size: 10.5px; color: var(--muted); letter-spacing: 0.04em;">💰 ประมาณการค่ารักษาเบื้องต้น</div>
+              <div id="priceTotalVal2D" style="font-family: 'Fraunces', serif; font-size: 17px; color: var(--bronze-soft); font-weight: 600;">฿0</div>
+            </div>
+            <div style="text-align: right;">
+              <span id="priceTechniqueTag2D" style="font-size: 10px; padding: 2px 8px; border-radius: 10px; background: rgba(201,154,91,0.12); color: var(--bronze); border: 0.5px solid rgba(201,154,91,0.25);">โครงสร้างเดิม</span>
+              <div id="priceItemCount2D" style="font-size: 9.5px; color: var(--muted); margin-top: 2px; font-family: 'IBM Plex Mono', monospace;">0 หัตถการ</div>
+            </div>
+          </div>
+
           <div class="tool-actions">
+            <button class="btn btn-outline" id="aiModeBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+              AI Vision: OFF
+            </button>
+            <button class="btn btn-outline" id="threeBtn" style="border-color:#6fae8a; color:#6fae8a;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+              <span>ดูโครงหน้า 3D</span>
+            </button>
+            <button class="btn btn-outline" id="compareBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v18M16 3v18M3 8l-2 4 2 4M21 8l2 4-2 4"/></svg>
+              <span class="compare-btn-text">เปิดมุมมองคู่ ก่อน/หลัง</span>
+            </button>
+            <button class="btn primary" id="captureBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px; margin-right:4px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              บันทึกรูปภาพ
+            </button>
             <button class="btn" id="resetBtn">รีเซ็ตฟิลเตอร์</button>
+            
           </div>
           <p class="tool-note"><strong>หมายเหตุ:</strong> เป็นการจำลองภาพเพื่อการอ้างอิงเท่านั้น ไม่ใช่ผลลัพธ์ทางการแพทย์จริง ผลจริงขึ้นอยู่กับดุลยพินิจของแพทย์ผู้เชี่ยวชาญ</p>
         </div>
@@ -240,16 +764,30 @@
   <section class="analysis" id="analysis">
     <div class="wrap">
       <div class="section-head">
-        <span class="eyebrow">วิเคราะห์โครงหน้า</span>
+        <span class="eyebrow">ขั้นตอนที่ 1 · วิเคราะห์โครงหน้า</span>
         <h2>โครงหน้าแบบคุณ เหมาะกับดั้งทรงไหน</h2>
-        <p>ระบบคำนวณสัดส่วนใบหน้าจากจุดสังเกตเดียวกับที่ใช้ทำฟิลเตอร์ แล้วแนะนำแนวโน้มทรงดั้งที่เข้ากับโครงหน้าคุณ</p>
+        <p>ระบบคำนวณสัดส่วนใบหน้าจากจุดสังเกตเดียวกับที่ใช้ทำฟิลเตอร์ แล้วแนะนำแนวโน้มทรงดั้งที่เข้ากับโครงหน้าคุณ พร้อมคำนวณความสมมาตรของใบหน้า (Symmetry Score)</p>
       </div>
       <div class="analysis-card">
         <div class="analysis-left">
-          <h3>วิเคราะห์ตอนนี้</h3>
-          <p>หันหน้าเข้ากล้องให้เห็นชัด แล้วกดปุ่มด้านล่าง ระบบจะจับภาพสัดส่วนใบหน้าปัจจุบันมาประเมิน</p>
-          <div class="analysis-status" id="analysisStatus"></div>
-          <button class="btn primary" id="analyzeBtn">วิเคราะห์โครงหน้า</button>
+          <h3>วิเคราะห์ภาพนิ่ง</h3>
+          <p>ถ่ายรูปจากกล้อง หรืออัปโหลดรูปภาพเพื่อความแม่นยำในการวิเคราะห์สัดส่วน</p>
+          <div class="analysis-status" id="analysisStatus" style="color:var(--bronze); font-weight:bold; margin-bottom:10px;"></div>
+          
+          <div id="analysisPreviewBox" class="hidden" style="width:100%; aspect-ratio:4/3; background:#000; border-radius:10px; overflow:hidden; border:1px solid var(--line); margin-bottom:14px; position:relative;">
+             <video id="analysisVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1); position:absolute; top:0; left:0;"></video>
+             <canvas id="analysisCanvas" width="480" height="360" style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; opacity:0;"></canvas>
+             <div id="analysisOverlay" class="hidden" style="position:absolute; top:0; left:0; width:100%; height:100%; background:transparent; z-index:20; display:flex; align-items:center; justify-content:center; color:white; font-size:96px; font-weight:bold; text-shadow:0 4px 20px rgba(0,0,0,0.8); pointer-events:none; transition: opacity 0.2s;"></div>
+          </div>
+          
+          <div style="display:flex; flex-direction:column; gap:10px;">
+             <button class="btn primary" id="analyzeSnapBtn" style="display:flex; justify-content:center; gap:8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> ถ่ายภาพ & วิเคราะห์
+             </button>
+             <button class="btn btn-outline" id="analyzeUploadBtn" style="display:flex; justify-content:center; gap:8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> อัปโหลดรูปภาพใหม่
+             </button>
+          </div>
         </div>
         <div id="analysisRight">
           <div class="analysis-placeholder" id="analysisPlaceholder">
@@ -269,9 +807,35 @@
                 <div>
                   <div class="ar-value" id="arRecName" style="font-size:16px; margin-bottom:4px;">-</div>
                   <div class="ar-desc" id="arRecDesc"></div>
+                  <button class="btn btn-outline" id="autoApplyBtn" style="margin-top:12px; padding:6px 12px; font-size:11px; width:fit-content; border-color:var(--bronze-soft);">✨ เลื่อนแถบตามทรงนี้อัตโนมัติ</button>
                 </div>
               </div>
             </div>
+            
+            <div class="ar-block" style="grid-column: span 2; padding: 12px 22px; background: rgba(255,255,255,0.02);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:12px; color:var(--bronze-soft);">AI ทายโครงหน้าผิด?</span>
+                    <select id="manualShapeSelect" style="background:var(--bg-card); color:var(--text); border:1px solid var(--line); border-radius:4px; padding:4px 8px; font-size:12px;">
+                        <option value="">เลือกแก้ไขด้วยตัวเอง...</option>
+                        <option value="oval">ใบหน้าสัดส่วนสมดุล</option>
+                        <option value="round">ใบหน้าสัดส่วนกว้าง</option>
+                        <option value="square">ใบหน้ากว้าง กรามชัดเจน</option>
+                        <option value="heart">หน้าผากกว้างกว่าช่วงกราม</option>
+                        <option value="long">ใบหน้าสัดส่วนแนวยาว</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="ar-block" style="grid-column: span 2; padding: 18px 22px;">
+              <div class="ar-label mono">ความสมมาตรของใบหน้า (Symmetry Score)</div>
+              <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+                <div style="flex:1; height:8px; background:var(--line); border-radius:4px; overflow:hidden;">
+                  <div id="symBar" style="height:100%; width:0%; background:var(--bronze); transition:width 1s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                </div>
+                <div class="ar-value" id="symScore" style="font-size:18px; margin:0; color:var(--bronze-soft); min-width:48px;">0%</div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -312,10 +876,23 @@
   </footer>
 </div>
 
+<!-- Cropper Modal -->
+<div id="cropperModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
+  <div style="width:100%; max-width:500px; height:60vh; background:#000; border-radius:12px; overflow:hidden; position:relative;">
+    <img id="cropperImage" style="max-width:100%; display:block;" src="">
+  </div>
+  <div style="margin-top:20px; display:flex; gap:16px;">
+    <button id="cropperCancelBtn" class="btn btn-outline" style="min-width:120px;">ยกเลิก</button>
+    <button id="cropperConfirmBtn" class="btn primary" style="min-width:120px;">ยืนยันรูปภาพ</button>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <script>
+/* global FaceMesh, Camera */
 (function(){
   const video = document.getElementById('video');
   const scanFrame = document.getElementById('scanFrame');
@@ -323,28 +900,85 @@
   const ringFg = document.getElementById('ringFg');
   const scanCheck = document.getElementById('scanCheck');
   const statusText = document.getElementById('statusText');
+  
   const startScanBtn = document.getElementById('startScanBtn');
+  const photoUpload = document.getElementById('photoUpload');
+  const uploadBtnLabel = document.getElementById('uploadBtnLabel');
+  const appUploadBtn = document.getElementById('appUploadBtn');
   const skipBtn = document.getElementById('skipBtn');
+  const sourceBadgeText = document.getElementById('sourceBadgeText');
+  
   const loginScreen = document.getElementById('loginScreen');
   const appScreen = document.getElementById('appScreen');
   const liveFrame = document.getElementById('liveFrame');
   const camFallback = document.getElementById('camFallback');
+  
   const bridgeSlider = document.getElementById('bridgeSlider');
   const widthSlider = document.getElementById('widthSlider');
+  const tipSlider = document.getElementById('tipSlider');
   const bridgeValLabel = document.getElementById('bridgeValLabel');
   const widthValLabel = document.getElementById('widthValLabel');
+  const tipValLabel = document.getElementById('tipValLabel');
+  
   const resetBtn = document.getElementById('resetBtn');
-  const analyzeBtn = document.getElementById('analyzeBtn');
+  const compareBtn = document.getElementById('compareBtn');
+  const captureBtn = document.getElementById('captureBtn');
+  const aiModeBtn = document.getElementById('aiModeBtn');
+  const aiHud = document.getElementById('aiHud');
+  const captureOverlay = document.getElementById('captureOverlay');
+  
+  const analyzeSnapBtn = document.getElementById('analyzeSnapBtn');
+  const analyzeUploadBtn = document.getElementById('analyzeUploadBtn');
+  const analysisPreviewBox = document.getElementById('analysisPreviewBox');
+  const analysisVideo = document.getElementById('analysisVideo');
+  const analysisCanvas = document.getElementById('analysisCanvas');
+  const analysisOverlay = document.getElementById('analysisOverlay');
+  const analysisCtx = analysisCanvas.getContext('2d');
+  
+  let currentCropper = null;
+  const cropperModal = document.getElementById('cropperModal');
+  const cropperImage = document.getElementById('cropperImage');
+  const cropperCancelBtn = document.getElementById('cropperCancelBtn');
+  const cropperConfirmBtn = document.getElementById('cropperConfirmBtn');
+  
   const analysisStatus = document.getElementById('analysisStatus');
   const analysisPlaceholder = document.getElementById('analysisPlaceholder');
+  const analysisNudge = document.getElementById('analysisNudge');
+  const analysisNudgeMsg = document.getElementById('analysisNudgeMsg');
+  const analysisNudgeBtn = document.getElementById('analysisNudgeBtn');
+  let lastAnalysisInfo = null;
+
+  function applyRecommendedPreset(info){
+    if(!info) return;
+    bridgeSlider.value = info.preset[0] || 0;
+    humpSlider.value = info.preset[1] || 0;
+    alarSlider.value = info.preset[2] || 0;
+    widthSlider.value = info.preset[3] || 0;
+    tipSlider.value = info.preset[4] || 0;
+    rotationSlider.value = info.preset[5] || 0;
+    projectionSlider.value = info.preset[6] || 0;
+    onSliderChange();
+    window.scrollTo({ top: document.getElementById('tool').offsetTop - 20, behavior: 'smooth' });
+  }
+
+  analysisNudgeBtn.addEventListener('click', () => {
+    if(lastAnalysisInfo){
+      applyRecommendedPreset(lastAnalysisInfo);
+    } else {
+      document.getElementById('analysis').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
   const analysisResult = document.getElementById('analysisResult');
   const arShapeName = document.getElementById('arShapeName');
   const arShapeDesc = document.getElementById('arShapeDesc');
   const arRecName = document.getElementById('arRecName');
   const arRecDesc = document.getElementById('arRecDesc');
   const arNoseIcon = document.getElementById('arNoseIcon');
+  const symBar = document.getElementById('symBar');
+  const symScore = document.getElementById('symScore');
 
-  const FACE_IDX = { top:10, chin:152, cheekL:234, cheekR:454, jawL:172, jawR:397, foreheadL:21, foreheadR:251 };
+  // Use accurate silhouette landmarks
+  const FACE_IDX = { top:10, chin:152, cheekL:234, cheekR:454, jawL:132, jawR:361, foreheadL:68, foreheadR:298 };
   const NOSE_PATHS = {
     straight: "M30,6 C18,30 16,50 22,66 C26,78 32,86 40,90",
     subtle:   "M32,6 C16,26 14,46 24,64 C30,78 34,84 42,88",
@@ -352,16 +986,17 @@
     bold:     "M34,6 C14,24 12,44 24,62 C31,76 33,84 40,90"
   };
   const SHAPE_INFO = {
-    long:   { name:'หน้ายาว (Oblong)', desc:'สัดส่วนความสูงมากกว่าความกว้างค่อนข้างชัด', rec:'โด่งเล็กน้อย', recDesc:'เลี่ยงดั้งที่โด่งหรือยาวมาก เพื่อไม่ให้ใบหน้าดูยาวขึ้นอีก', noseKey:'subtle' },
-    heart:  { name:'หน้ารูปหัวใจ (Heart)', desc:'หน้าผากกว้างกว่าคางอย่างเห็นได้ชัด', rec:'ปลายเรียว', recDesc:'ช่วยถ่วงสมดุลระหว่างหน้าผากที่กว้างกับคางที่แคบ', noseKey:'tapered' },
-    square: { name:'หน้าเหลี่ยม (Square)', desc:'กรามและโหนกแก้มกว้างใกล้เคียงกัน เส้นกรามชัด', rec:'สันตรงคลาสสิก', recDesc:'เส้นตรงเรียบช่วยให้ภาพรวมดูนุ่มนวลกลมกลืนกับมุมกราม', noseKey:'straight' },
-    round:  { name:'หน้ากลม (Round)', desc:'ความกว้างและความสูงใกล้เคียงกัน เส้นกรามมน', rec:'โด่งชัดเจน', recDesc:'เพิ่มมิติและเส้นตั้งให้ใบหน้าดูเรียวยาวขึ้น', noseKey:'bold' },
-    oval:   { name:'หน้ารูปไข่ (Oval)', desc:'สัดส่วนใบหน้าสมดุล ไม่มีจุดใดกว้างหรือแคบเด่นชัด', rec:'โด่งเล็กน้อย', recDesc:'โครงหน้าสมดุลอยู่แล้ว เหมาะกับดั้งได้แทบทุกทรง แนะนำทรงกลางๆ ที่เป็นธรรมชาติ', noseKey:'subtle' }
+    long:   { name:'ใบหน้าสัดส่วนแนวยาว', desc:'ตรวจพบความสูงของใบหน้ามากกว่าความกว้างค่อนข้างชัดเจน', rec:'โด่งเล็กน้อย', recDesc:'เลี่ยงดั้งที่โด่งหรือยาวมาก เพื่อไม่ให้ใบหน้าดูยาวขึ้นอีก', noseKey:'subtle', preset:[20,-10,10] },
+    heart:  { name:'หน้าผากกว้างกว่าช่วงกราม', desc:'ตรวจพบช่วงหน้าผากกว้าง และคางมีความเรียวแคบ', rec:'ปลายเรียว', recDesc:'ช่วยถ่วงสมดุลระหว่างหน้าผากที่กว้างกับคางที่แคบ', noseKey:'tapered', preset:[15,25,-15] },
+    square: { name:'ใบหน้ากว้าง กรามชัดเจน', desc:'ตรวจพบสัดส่วนกรามและโหนกแก้มกว้างใกล้เคียงกัน', rec:'สันตรงคลาสสิก', recDesc:'เส้นตรงเรียบช่วยให้ภาพรวมดูนุ่มนวลกลมกลืนกับมุมกราม', noseKey:'straight', preset:[40,10,0] },
+    round:  { name:'ใบหน้าสัดส่วนกว้าง', desc:'ตรวจพบความกว้างและความสูงของใบหน้าใกล้เคียงกัน', rec:'โด่งชัดเจน', recDesc:'เพิ่มมิติและเส้นตั้งให้ใบหน้าดูเรียวยาวขึ้น', noseKey:'bold', preset:[60,20,20] },
+    oval:   { name:'ใบหน้าสัดส่วนสมดุล', desc:'ตรวจพบสัดส่วนใบหน้าโดยรวมสมดุลกัน', rec:'โด่งเล็กน้อย', recDesc:'โครงหน้าสมดุลอยู่แล้ว เหมาะกับดั้งได้แทบทุกทรง แนะนำทรงกลางๆ ที่เป็นธรรมชาติ', noseKey:'subtle', preset:[25,0,5] }
   };
 
-  function analyzeFaceShape(landmarks){
+  function analyzeFaceShape(landmarks, imgW, imgH){
     const p = i => landmarks[i];
-    const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+    // Convert normalized coordinates back to actual pixel scale so distances are not skewed by aspect ratio
+    const dist = (a,b) => Math.hypot((a.x-b.x)*imgW, (a.y-b.y)*imgH);
     const faceHeight = dist(p(FACE_IDX.top), p(FACE_IDX.chin));
     const cheekWidth = dist(p(FACE_IDX.cheekL), p(FACE_IDX.cheekR));
     const jawWidth = dist(p(FACE_IDX.jawL), p(FACE_IDX.jawR));
@@ -373,27 +1008,97 @@
     const foreheadJawRatio = foreheadWidth / (jawWidth || 0.0001);
 
     let key;
-    if(widthHeightRatio < 0.72) key = 'long';
-    else if(foreheadJawRatio > 1.15) key = 'heart';
-    else if(jawCheekRatio > 0.95 && widthHeightRatio > 0.85) key = 'square';
-    else if(jawCheekRatio > 0.9 && widthHeightRatio > 0.9) key = 'round';
-    else key = 'oval';
-    return SHAPE_INFO[key];
+    // Data-driven thresholds based on silhouette markers (132/361 for jaw, 68/298 for forehead)
+    if(foreheadJawRatio > 1.05) {
+       key = 'heart'; 
+    } else if(widthHeightRatio > 0.77 && jawCheekRatio > 0.93) {
+       key = 'square'; 
+    } else if(widthHeightRatio > 0.80 && jawCheekRatio <= 0.93) {
+       key = 'round'; 
+    } else if(widthHeightRatio < 0.74) {
+       key = 'long'; 
+    } else {
+       key = 'oval'; 
+    }
+    
+    // Calculate Symmetry Score (using pixel distances)
+    const nose = p(1);
+    const leftW = Math.abs(nose.x - p(FACE_IDX.cheekL).x) * imgW;
+    const rightW = Math.abs(p(FACE_IDX.cheekR).x - nose.x) * imgW;
+    let symmetry = 100 - (Math.abs(leftW - rightW) / ((leftW + rightW) || 1) * 100);
+    symmetry = Math.max(0, Math.min(100, symmetry));
+
+    return { 
+        ...SHAPE_INFO[key], 
+        symmetryScore: symmetry,
+        debugRatios: `(W/H:${widthHeightRatio.toFixed(2)}, J/C:${jawCheekRatio.toFixed(2)}, F/J:${foreheadJawRatio.toFixed(2)})`
+    };
   }
 
   const CANVAS_W = 480, CANVAS_H = 360;
   const canvas = document.createElement('canvas');
   canvas.width = CANVAS_W; canvas.height = CANVAS_H;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-  const NOSE_IDX = [168,6,197,195,5,4,1,45,275,49,279,129,358,98,327,2];
+  // ---------- Before/After dual side-by-side compare ----------
+  const dualViewWrapper = document.getElementById('dualViewWrapper');
+  const beforeSideCanvas = document.getElementById('beforeSideCanvas');
+  const beforeSideCtx = beforeSideCanvas.getContext('2d');
+  beforeSideCanvas.width = CANVAS_W; beforeSideCanvas.height = CANVAS_H;
+
+  // The "after" side will use the main canvas appended into afterSideWrapper
+  const afterSideWrapper = document.getElementById('afterSideWrapper');
+
+  let compareMode = false;
+
+  function updateBeforeCanvas(){
+    if(!compareMode) return;
+    drawSourceToCanvas(beforeSideCtx);
+  }
+
+  function setCompareMode(on){
+    compareMode = on;
+    if(on){
+      // Show dual view, hide single view
+      dualViewWrapper.classList.add('active');
+      liveFrame.style.display = 'none';
+      // Move the main canvas into afterSideWrapper
+      if(!afterSideWrapper.contains(canvas)){
+        afterSideWrapper.appendChild(canvas);
+        canvas.style.cssText = 'width:100%; height:100%; display:block; object-fit:cover; position:absolute; top:0; left:0;';
+      }
+      updateBeforeCanvas();
+    } else {
+      // Restore single view
+      dualViewWrapper.classList.remove('active');
+      liveFrame.style.display = '';
+      // Move canvas back to liveFrame
+      if(!liveFrame.contains(canvas)){
+        liveFrame.insertBefore(canvas, liveFrame.firstChild);
+        canvas.style.cssText = 'width:100%; height:100%; display:block; object-fit:cover;';
+      }
+    }
+    if(compareBtn){
+      compareBtn.classList.toggle('active', on);
+      const btnText = compareBtn.querySelector('.compare-btn-text');
+      if(btnText) btnText.textContent = on ? 'ปิดมุมมองคู่' : 'เปิดมุมมองคู่ ก่อน/หลัง';
+    }
+  }
+
+  window.NOSE_IDX = [168,6,197,195,5,4,1,45,275,49,279,129,358,98,327,2];
   const RING_LEN = 339.3;
+  const SMOOTHING_FACTOR = 0.5;
 
   let state = 'idle'; // idle | scanning | success | filter | error
   let detectStart = null;
   let camera = null;
   let faceMesh = null;
   let latestLandmarks = null;
+  let isAiMode = false;
+  let smoothedNose = null;
+  
+  let currentSourceType = 'video'; window.currentSourceType = 'video'; window.currentSourceType = currentSourceType; // video or image
+  const imgElement = new Image();
 
   function setStatus(text){ statusText.textContent = text; }
 
@@ -403,49 +1108,238 @@
     faceMesh.onResults(onResults);
   }
 
+  let isCameraPaused = false;
+  let isProcessingVideoFrame = false;
+
   function startCamera(){
-    setStatus('กำลังขอสิทธิ์การใช้กล้อง...');
+    currentSourceType = 'video'; window.currentSourceType = 'video';
+    sourceBadgeText.textContent = 'LIVE';
+    setStatus('กำลังโหลดโมเดล AI (Deep Learning)...');
+    scanPlaceholder.innerHTML = '<div class="spinner"></div><span style="color:var(--bronze-soft)">กำลังโหลดโมเดล AI...</span>';
     startScanBtn.disabled = true;
     try{
       camera = new Camera(video, {
-        onFrame: async () => { if(faceMesh){ await faceMesh.send({image: video}); } },
+        onFrame: async () => { 
+            if(faceMesh && !isCameraPaused){ 
+                isProcessingVideoFrame = true;
+                await faceMesh.send({image: video}); 
+                isProcessingVideoFrame = false;
+            } 
+        },
+        facingMode: 'user',
         width: CANVAS_W, height: CANVAS_H
       });
       camera.start().then(() => {
         scanPlaceholder.classList.add('hidden');
         state = 'scanning';
-        setStatus('กรุณาจัดใบหน้าให้อยู่ในกรอบ');
+        setStatus('กำลังสแกนใบหน้าอัตโนมัติ...');
       }).catch(onCameraError);
     }catch(err){ onCameraError(err); }
   }
+  
+  function processUploadedImage(file, target) {
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      cropperImage.src = event.target.result;
+      cropperModal.classList.remove('hidden');
+      if (currentCropper) currentCropper.destroy();
+      
+      cropperConfirmBtn.dataset.target = target;
+      
+      // Wait for image to load in modal before initializing Cropper
+      cropperImage.onload = () => {
+         currentCropper = new Cropper(cropperImage, {
+            viewMode: 1,
+            dragMode: 'move',
+            aspectRatio: 4 / 3, // Recommend 4:3 for best UI fit, or free? Free is NaN. Let's do NaN for free aspect ratio, but UI is 4:3. Let's do NaN.
+            autoCropArea: 0.9,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+         });
+      };
+    };
+    reader.readAsDataURL(file);
+  }
+
+  cropperCancelBtn.addEventListener('click', () => {
+     cropperModal.classList.add('hidden');
+     if(currentCropper) currentCropper.destroy();
+     currentCropper = null;
+  });
+  
+  let isAnalysisUploadProcessing = false;
+
+  cropperConfirmBtn.addEventListener('click', () => {
+     if (!currentCropper) return;
+     const croppedCanvas = currentCropper.getCroppedCanvas({
+        maxWidth: 1024,
+        maxHeight: 1024,
+     });
+     if (!croppedCanvas) return;
+     
+     cropperModal.classList.add('hidden');
+     currentCropper.destroy();
+     currentCropper = null;
+     
+     const target = cropperConfirmBtn.dataset.target || 'main';
+     
+     if (target === 'main') {
+         if(camera) { try{ camera.stop(); }catch(e){} }
+         currentSourceType = 'image'; window.currentSourceType = 'image';
+         sourceBadgeText.textContent = 'PHOTO';
+         appUploadBtn.textContent = 'เปิดกล้องสด';
+         
+         imgElement.onload = async () => {
+           if(!faceMesh) initFaceMesh();
+           if(state === 'idle') {
+              scanPlaceholder.classList.add('hidden');
+              setStatus('กำลังวิเคราะห์รูปภาพด้วย AI...');
+              startScanBtn.disabled = true;
+           }
+           drawSourceToCanvas();
+           await faceMesh.send({image: canvas});
+         };
+         imgElement.src = croppedCanvas.toDataURL('image/jpeg');
+     } else if (target === 'analysis') {
+         isCameraPaused = true; // Pause camera to prevent frame interleaving
+
+         const tempImg = new Image();
+         tempImg.onload = async () => {
+             // Draw tempImg to analysisCanvas to show it
+             analysisCtx.fillStyle = '#0c0f10';
+             analysisCtx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+             const aspect = tempImg.width / tempImg.height;
+             let dw = CANVAS_W, dh = CANVAS_W / aspect;
+             if(dh < CANVAS_H) { dh = CANVAS_H; dw = CANVAS_H * aspect; }
+             analysisCtx.drawImage(tempImg, (CANVAS_W-dw)/2, (CANVAS_H-dh)/2, dw, dh);
+             
+             analysisCanvas.style.opacity = '1';
+             if(analysisVideo) analysisVideo.style.opacity = '0';
+             analysisPreviewBox.classList.remove('hidden');
+             analysisStatus.textContent = 'กำลังวิเคราะห์ภาพ...';
+             analyzeSnapBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> ถ่ายภาพใหม่';
+
+             if(!faceMesh) initFaceMesh();
+             
+             // Safely wait until the current video frame (if any) finishes processing
+             const waitInterval = setInterval(async () => {
+                 if (!isProcessingVideoFrame) {
+                     clearInterval(waitInterval);
+                     isAnalysisUploadProcessing = true;
+                     try {
+                         await faceMesh.send({image: analysisCanvas});
+                     } catch(err) {
+                         console.error(err);
+                         isAnalysisUploadProcessing = false;
+                         isCameraPaused = false;
+                         analysisStatus.textContent = 'วิเคราะห์ล้มเหลว กรุณาลองใหม่อีกครั้ง';
+                     }
+                 }
+             }, 50);
+         };
+         tempImg.src = croppedCanvas.toDataURL('image/jpeg');
+     }
+  });
 
   function onCameraError(){
     state = 'error';
     setStatus('ไม่สามารถเข้าถึงกล้องได้ ลองใหม่หรือข้ามขั้นตอนนี้');
     startScanBtn.disabled = false;
     startScanBtn.textContent = 'ลองอีกครั้ง';
+    scanPlaceholder.innerHTML = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M15 8h.01M4 7a2 2 0 012-2h2M20 7a2 2 0 00-2-2h-2M4 17a2 2 0 002 2h2M20 17a2 2 0 01-2 2h-2"/></svg><span>ไม่พบสัญญาณกล้อง</span>';
   }
 
   function onResults(results){
     const has = results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0;
-    latestLandmarks = has ? results.multiFaceLandmarks[0] : null;
+    
+    if (isAnalysisUploadProcessing) {
+       isAnalysisUploadProcessing = false;
+       isCameraPaused = false; // Resume camera after analysis upload is handled
+       const lm = has ? results.multiFaceLandmarks[0] : null;
+       if(lm) {
+          // Since analysisCanvas is used, its size is CANVAS_W and CANVAS_H
+          const shapeInfo = analyzeFaceShape(lm, CANVAS_W, CANVAS_H);
+          if(!shapeInfo) { analysisStatus.textContent = 'ตรวจจับโครงหน้าไม่สำเร็จ'; return; }
+          analysisResult.classList.add('show');
+          analysisPlaceholder.classList.add('hidden');
+          
+          document.getElementById('arShapeName').innerHTML = `${shapeInfo.name} <span style="font-size:10px; color:#666;">${shapeInfo.debugRatios}</span>`;
+          document.getElementById('arShapeDesc').textContent = shapeInfo.desc;
+          document.getElementById('arRecName').textContent = shapeInfo.rec;
+          document.getElementById('arRecDesc').textContent = shapeInfo.recDesc;
+          document.getElementById('arNoseIcon').querySelector('path').setAttribute('d', NOSE_PATHS[shapeInfo.noseKey]);
+          
+          document.getElementById('autoApplyBtn').dataset.preset = JSON.stringify(shapeInfo.preset);
+          
+          const score = shapeInfo.symmetryScore || 0;
+          symScore.textContent = Math.round(score) + '%';
+          setTimeout(() => { symBar.style.width = score + '%'; }, 50);
+          
+          analysisStatus.textContent = 'วิเคราะห์สำเร็จ!';
+          window.scrollTo({ top: document.getElementById('analysisStatus').offsetTop - 50, behavior: 'smooth' });
+       } else {
+          analysisStatus.textContent = 'ไม่พบใบหน้าในรูปภาพที่อัปโหลด';
+       }
+       return; // SKIP normal drawing since this is just for analysis box
+    }
+
+    latestLandmarks = has ? results.multiFaceLandmarks[0] : null; window.latestLandmarks = latestLandmarks;
+    
+    if(latestLandmarks && state === 'filter') updateHUD(latestLandmarks);
 
     if(state === 'scanning'){
       drawToCanvas(false);
       if(has){
+        if(currentSourceType === 'image') {
+          triggerSuccess();
+          return;
+        }
         if(!detectStart) detectStart = performance.now();
-        const frac = Math.min(1, (performance.now() - detectStart) / 1600);
+        const frac = Math.min(1, (performance.now() - detectStart) / 600);
         ringFg.style.strokeDashoffset = RING_LEN * (1 - frac);
         setStatus('กำลังตรวจจับใบหน้า...');
         if(frac >= 1){ triggerSuccess(); }
       } else {
         detectStart = null;
         ringFg.style.strokeDashoffset = RING_LEN;
-        setStatus('กรุณาจัดใบหน้าให้อยู่ในกรอบ');
+        setStatus(currentSourceType === 'image' ? 'ไม่พบใบหน้าในรูปภาพ' : 'กำลังค้นหาใบหน้า...');
+        smoothedNose = null;
       }
     } else if(state === 'filter'){
       drawToCanvas(true);
     }
+  }
+  
+  function updateHUD(lm) {
+    if(!isAiMode) return;
+    const p = i => lm[i];
+    
+    // Yaw estimation
+    const nose = p(1), cheekL = p(234), cheekR = p(454);
+    const distL = Math.hypot(nose.x - cheekL.x, nose.y - cheekL.y);
+    const distR = Math.hypot(nose.x - cheekR.x, nose.y - cheekR.y);
+    let yaw = ((distR - distL) / ((distL + distR) || 1)) * 90;
+    document.getElementById('hudYaw').textContent = yaw.toFixed(1);
+
+    // Pitch estimation
+    const top = p(10), chin = p(152);
+    const distTop = Math.hypot(nose.x - top.x, nose.y - top.y);
+    const distBottom = Math.hypot(nose.x - chin.x, nose.y - chin.y);
+    let pitch = ((distBottom - distTop) / ((distTop + distBottom) || 1)) * 90;
+    document.getElementById('hudPitch').textContent = pitch.toFixed(1);
+
+    // Smile estimation
+    const mouthL = p(61), mouthR = p(291);
+    const mouthWidth = Math.hypot(mouthL.x - mouthR.x, mouthL.y - mouthR.y);
+    const eyeWidth = Math.hypot(p(33).x - p(263).x, p(33).y - p(263).y);
+    let smile = Math.max(0, Math.min(100, ((mouthWidth / eyeWidth) - 0.35) * 250));
+    document.getElementById('hudSmile').textContent = Math.round(smile);
   }
 
   function triggerSuccess(){
@@ -462,41 +1356,92 @@
       appScreen.classList.remove('hidden');
       liveFrame.insertBefore(canvas, camFallback);
       state = 'filter';
+      if(currentSourceType === 'image') drawToCanvas(true);
     }, 480);
+  }
+  
+  function drawSourceToCanvas(targetCtx) {
+    targetCtx = targetCtx || ctx;
+    targetCtx.save();
+    if(currentSourceType === 'video') {
+       targetCtx.scale(-1, 1);
+       targetCtx.drawImage(video, -CANVAS_W, 0, CANVAS_W, CANVAS_H);
+    } else {
+       targetCtx.fillStyle = '#0c0f10';
+       targetCtx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+       const aspect = imgElement.width / imgElement.height;
+       let dw = CANVAS_W, dh = CANVAS_W / aspect;
+       if(dh < CANVAS_H) { dh = CANVAS_H; dw = CANVAS_H * aspect; }
+       targetCtx.drawImage(imgElement, (CANVAS_W-dw)/2, (CANVAS_H-dh)/2, dw, dh);
+    }
+    targetCtx.restore();
+  }
+  
+  function getLmX(lm) {
+    return currentSourceType === 'video' ? CANVAS_W - (lm.x*CANVAS_W) : (lm.x*CANVAS_W);
   }
 
   function drawToCanvas(applyFilter){
-    ctx.save();
-    ctx.scale(-1,1);
-    ctx.drawImage(video, -CANVAS_W, 0, CANVAS_W, CANVAS_H);
-    ctx.restore();
+    drawSourceToCanvas();
+    updateBeforeCanvas();
 
-    if(!applyFilter || !latestLandmarks) return;
+    if(!applyFilter || !latestLandmarks) {
+        smoothedNose = null;
+        drawWireframe();
+        return;
+    }
 
+    
     const bridge = parseInt(bridgeSlider.value,10)/100;
     const widthAdj = parseInt(widthSlider.value,10)/100;
+    const tipAdj = parseInt(tipSlider.value,10)/100;
+    const humpAdj = parseInt(humpSlider.value,10)/100;
+    const alarAdj = parseInt(alarSlider.value,10)/100;
+    const rotationAdj = parseInt(rotationSlider.value,10)/100;
+    const projAdj = parseInt(projectionSlider.value,10)/100;
+
     bridgeValLabel.textContent = Math.round(bridge*100)+'%';
     widthValLabel.textContent = Math.round(widthAdj*100)+'%';
-    if(bridge === 0 && widthAdj === 0) return;
+    tipValLabel.textContent = Math.round(tipAdj*100)+'%';
+    humpValLabel.textContent = Math.round(humpAdj*100)+'%';
+    alarValLabel.textContent = Math.round(alarAdj*100)+'%';
+    rotationValLabel.textContent = Math.round(rotationAdj*100)+'%';
+    projectionValLabel.textContent = Math.round(projAdj*100)+'%';
+
+    if(bridge===0 && widthAdj===0 && tipAdj===0 && humpAdj===0 && alarAdj===0 && rotationAdj===0 && projAdj===0) {
+      drawWireframe();
+      return;
+    }
 
     let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
-    NOSE_IDX.forEach(i => {
-      const lm = latestLandmarks[i];
+    window.NOSE_IDX.forEach(i => {
+      const lm = window.latestLandmarks[i];
       if(!lm) return;
-      const px = CANVAS_W - (lm.x*CANVAS_W);
+      const px = getLmX(lm);
       const py = lm.y*CANVAS_H;
       if(px<minX)minX=px; if(px>maxX)maxX=px;
       if(py<minY)minY=py; if(py>maxY)maxY=py;
     });
-    if(minX===Infinity) return;
+    if(minX===Infinity) { drawWireframe(); return; }
 
-    const cx = (minX+maxX)/2, cy = (minY+maxY)/2;
-    const rx = Math.max(18,(maxX-minX)/2*1.5);
-    const ry = Math.max(24,(maxY-minY)/2*1.35);
+    const rawCx = (minX+maxX)/2, rawCy = (minY+maxY)/2;
+    const rawRx = Math.max(18,(maxX-minX)/2*1.5);
+    const rawRy = Math.max(24,(maxY-minY)/2*1.35);
 
-    const x0 = Math.max(0, Math.floor(cx-rx)), x1 = Math.min(CANVAS_W, Math.ceil(cx+rx));
-    const y0 = Math.max(0, Math.floor(cy-ry)), y1 = Math.min(CANVAS_H, Math.ceil(cy+ry));
-    if(x1<=x0 || y1<=y0) return;
+    if (!smoothedNose || currentSourceType === 'image') {
+      smoothedNose = { cx: rawCx, cy: rawCy, rx: rawRx, ry: rawRy };
+    } else {
+      smoothedNose.cx = smoothedNose.cx * (1 - SMOOTHING_FACTOR) + rawCx * SMOOTHING_FACTOR;
+      smoothedNose.cy = smoothedNose.cy * (1 - SMOOTHING_FACTOR) + rawCy * SMOOTHING_FACTOR;
+      smoothedNose.rx = smoothedNose.rx * (1 - SMOOTHING_FACTOR) + rawRx * SMOOTHING_FACTOR;
+      smoothedNose.ry = smoothedNose.ry * (1 - SMOOTHING_FACTOR) + rawRy * SMOOTHING_FACTOR;
+    }
+
+    const { cx, cy, rx, ry } = smoothedNose;
+
+    const x0 = Math.max(0, Math.floor(cx-rx*1.5)), x1 = Math.min(CANVAS_W, Math.ceil(cx+rx*1.5));
+    const y0 = Math.max(0, Math.floor(cy-ry*1.5)), y1 = Math.min(CANVAS_H, Math.ceil(cy+ry*1.5));
+    if(x1<=x0 || y1<=y0) { drawWireframe(); return; }
 
     const src = ctx.getImageData(0,0,CANVAS_W,CANVAS_H);
     const out = ctx.createImageData(CANVAS_W,CANVAS_H);
@@ -504,34 +1449,148 @@
 
     const bulgeStrength = 1 - bridge*0.55;
     const pinchStrength = 1 + widthAdj*0.9;
-
+    
     for(let y=y0; y<y1; y++){
       for(let x=x0; x<x1; x++){
         const dx=(x-cx)/rx, dy=(y-cy)/ry;
         const r=Math.sqrt(dx*dx+dy*dy);
-        if(r>=1 || r===0) continue;
-        const rn=Math.pow(r,bulgeStrength);
-        const scale=rn/r;
-        let sdx=dx*scale, sdy=dy*scale;
-        if(widthAdj>0){
-          const rw=Math.pow(Math.abs(dx),pinchStrength)*Math.sign(dx);
-          sdx=sdx*0.5+rw*0.5;
+        if(r>=1.2 || r===0) continue; 
+        
+        let rn = Math.pow(r, bulgeStrength);
+        const scale = (r<1) ? (rn/r) : 1; 
+        
+        let sdx = dx * scale;
+        let sdy = dy * scale;
+        
+        // Bridge Width
+        if(widthAdj!==0 && dy < 0.2){
+          const rw = Math.pow(Math.abs(dx), pinchStrength) * Math.sign(dx);
+          sdx = sdx*0.5 + rw*0.5;
         }
-        const srcX=Math.round(cx+sdx*rx), srcY=Math.round(cy+sdy*ry);
+
+        // Hump / Slope Logic
+        if(humpAdj !== 0 && dy < -0.1 && dy > -0.8) {
+          const humpWeight = Math.sin((dy + 0.8) / 0.7 * Math.PI); 
+          sdx += humpWeight * humpAdj * 0.2 * Math.sign(dx);
+        }
+
+        // Alar / Nostril Width Logic
+        if(alarAdj !== 0 && dy > 0.2 && Math.abs(dx) > 0.3) {
+          const alarWeight = (dy - 0.2) / 0.8; 
+          sdx += alarAdj * alarWeight * 0.4 * Math.sign(dx);
+        }
+        
+        // Tip Lift & Rotation Logic
+        let tipOffset = 0;
+        if(dy > 0 && tipAdj !== 0){
+          const weight = Math.sin(dy * Math.PI); 
+          tipOffset = -tipAdj * weight * 0.45;
+        }
+        if(rotationAdj !== 0 && dy > -0.2) {
+          const rotWeight = (dy + 0.2) / 1.2;
+          tipOffset -= rotationAdj * rotWeight * 0.5; 
+          sdx -= rotationAdj * rotWeight * 0.1 * dx; 
+        }
+
+        const srcX = Math.round(cx + sdx*rx);
+        const srcY = Math.round(cy + (sdy+tipOffset)*ry);
         if(srcX<0||srcX>=CANVAS_W||srcY<0||srcY>=CANVAS_H) continue;
-        const di=(y*CANVAS_W+x)*4, si=(srcY*CANVAS_W+srcX)*4;
-        out.data[di]=src.data[si]; out.data[di+1]=src.data[si+1];
-        out.data[di+2]=src.data[si+2]; out.data[di+3]=src.data[si+3];
+        
+        const di = (y*CANVAS_W+x)*4;
+        const si = (srcY*CANVAS_W+srcX)*4;
+        
+        let r_col = src.data[si];
+        let g_col = src.data[si+1];
+        let b_col = src.data[si+2];
+
+        // Projection / Highlight Illusion
+        if(projAdj > 0 && Math.abs(dx) < 0.5) {
+           const centerDist = Math.abs(dx);
+           const hlWeight = Math.max(0, 1 - (centerDist * 2.5)) * Math.max(0, 1 - Math.abs(dy));
+           r_col = Math.min(255, r_col + 60 * projAdj * hlWeight);
+           g_col = Math.min(255, g_col + 60 * projAdj * hlWeight);
+           b_col = Math.min(255, b_col + 50 * projAdj * hlWeight);
+           
+           const shWeight = Math.max(0, Math.sin(centerDist * Math.PI)) * Math.max(0, 1 - Math.abs(dy));
+           r_col = Math.max(0, r_col - 30 * projAdj * shWeight);
+           g_col = Math.max(0, g_col - 30 * projAdj * shWeight);
+           b_col = Math.max(0, b_col - 30 * projAdj * shWeight);
+        }
+
+        out.data[di] = r_col;
+        out.data[di+1] = g_col;
+        out.data[di+2] = b_col;
+        out.data[di+3] = src.data[si+3];
       }
     }
+
     ctx.putImageData(out,0,0);
+    drawWireframe();
   }
+  
+  function drawWireframe() {
+    // Show wireframe if in AI mode OR during the initial scanning phase
+    if((!isAiMode && state !== 'scanning') || !latestLandmarks) return;
+    ctx.fillStyle = '#00FF00';
+    latestLandmarks.forEach(lm => {
+       ctx.fillRect(getLmX(lm), lm.y*CANVAS_H, 2, 2);
+    });
+  }
+  
+  
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+       const p = JSON.parse(e.target.dataset.preset);
+       bridgeSlider.value = p[0]; humpSlider.value = p[1]; alarSlider.value = p[2];
+       widthSlider.value = p[3]; tipSlider.value = p[4]; rotationSlider.value = p[5]; projectionSlider.value = p[6];
+       onSliderChange();
+    });
+  });
+
+  const onSliderChange = () => {
+    // Update 2D labels
+    bridgeValLabel.textContent = bridgeSlider.value + '%';
+    widthValLabel.textContent = widthSlider.value + '%';
+    tipValLabel.textContent = tipSlider.value + '%';
+    humpValLabel.textContent = humpSlider.value + '%';
+    alarValLabel.textContent = alarSlider.value + '%';
+    rotationValLabel.textContent = rotationSlider.value + '%';
+    projectionValLabel.textContent = projectionSlider.value + '%';
+    
+    if (typeof update2DPriceEstimate === 'function') update2DPriceEstimate();
+    if(currentSourceType === 'image') drawToCanvas(true);
+  };
+  bridgeSlider.addEventListener('input', onSliderChange);
+  widthSlider.addEventListener('input', onSliderChange);
+  tipSlider.addEventListener('input', onSliderChange);
+  humpSlider.addEventListener('input', onSliderChange);
+  alarSlider.addEventListener('input', onSliderChange);
+  rotationSlider.addEventListener('input', onSliderChange);
+  projectionSlider.addEventListener('input', onSliderChange);
+
+
 
   startScanBtn.addEventListener('click', () => {
     startScanBtn.classList.add('hidden');
     if(!faceMesh) initFaceMesh();
     scanFrame.insertBefore(canvas, ringFg.closest('svg'));
     startCamera();
+  });
+  let uploadTarget = 'main';
+  
+  uploadBtnLabel.addEventListener('click', () => { uploadTarget = 'main'; photoUpload.click(); });
+  appUploadBtn.addEventListener('click', () => {
+    if(currentSourceType === 'video') {
+       uploadTarget = 'main';
+       photoUpload.click();
+    } else {
+       appUploadBtn.textContent = 'อัปโหลดรูป';
+       startCamera();
+    }
+  });
+  photoUpload.addEventListener('change', (e) => {
+    if(e.target.files.length) processUploadedImage(e.target.files[0], uploadTarget);
+    e.target.value = ''; // Reset input to allow selecting same file again or new files cleanly
   });
 
   skipBtn.addEventListener('click', () => {
@@ -543,31 +1602,1079 @@
   });
 
   resetBtn.addEventListener('click', () => {
-    bridgeSlider.value = 0; widthSlider.value = 0;
-    bridgeValLabel.textContent = '0%'; widthValLabel.textContent = '0%';
+    bridgeSlider.value = 0; widthSlider.value = 0; tipSlider.value = 0;
+    humpSlider.value = 0; alarSlider.value = 0; rotationSlider.value = 0; projectionSlider.value = 0;
+    bridgeValLabel.textContent = '0%'; widthValLabel.textContent = '0%'; tipValLabel.textContent = '0%';
+    humpValLabel.textContent = '0%'; alarValLabel.textContent = '0%'; rotationValLabel.textContent = '0%'; projectionValLabel.textContent = '0%';
+    onSliderChange();
+    if (typeof update2DPriceEstimate === 'function') update2DPriceEstimate();
   });
 
-  analyzeBtn.addEventListener('click', () => {
+  captureBtn.addEventListener('click', () => {
+    // Render a fresh, unfiltered "BEFORE" frame at the exact moment of capture
+    const tmpBefore = document.createElement('canvas');
+    tmpBefore.width = CANVAS_W; tmpBefore.height = CANVAS_H;
+    drawSourceToCanvas(tmpBefore.getContext('2d'));
+
+    const GAP = 6, LABEL_H = 36, WM_H = 22;
+    const combined = document.createElement('canvas');
+    combined.width = CANVAS_W * 2 + GAP;
+    combined.height = CANVAS_H + LABEL_H + WM_H;
+    const cctx = combined.getContext('2d');
+
+    cctx.fillStyle = '#0c0f10';
+    cctx.fillRect(0, 0, combined.width, combined.height);
+
+    cctx.drawImage(tmpBefore, 0, LABEL_H, CANVAS_W, CANVAS_H);
+    cctx.drawImage(canvas, CANVAS_W + GAP, LABEL_H, CANVAS_W, CANVAS_H);
+
+    cctx.fillStyle = '#c99a5b';
+    cctx.fillRect(CANVAS_W, LABEL_H, GAP, CANVAS_H);
+
+    cctx.textAlign = 'center';
+    cctx.fillStyle = '#e3c390';
+    cctx.font = 'bold 16px "IBM Plex Mono", monospace';
+    cctx.fillText('ก่อนปรับ · BEFORE', CANVAS_W / 2, 24);
+    cctx.fillText('หลังปรับ · AFTER', CANVAS_W + GAP + CANVAS_W / 2, 24);
+
+    cctx.textAlign = 'right';
+    cctx.font = '11px "IBM Plex Mono", monospace';
+    cctx.fillStyle = 'rgba(227,195,144,0.55)';
+    cctx.fillText('NoseSim · จำลองเพื่อการศึกษาเท่านั้น ไม่ใช่ผลลัพธ์ทางการแพทย์จริง', combined.width - 10, combined.height - 7);
+
+    const dataURL = combined.toDataURL('image/jpeg', 0.92);
+    const link = document.createElement('a');
+    link.href = dataURL;
+    link.download = `nosesim_before_after_${Date.now()}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+
+  compareBtn.addEventListener('click', () => setCompareMode(!compareMode));
+
+  aiModeBtn.addEventListener('click', () => {
+    isAiMode = !isAiMode;
+    aiModeBtn.classList.toggle('active', isAiMode);
+    aiModeBtn.innerHTML = isAiMode 
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> AI Vision: ON'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> AI Vision: OFF';
+    aiHud.classList.toggle('hidden', !isAiMode);
+    if(currentSourceType === 'image') drawToCanvas(true);
+  });
+
+  function runAnalysis() {
     if(!latestLandmarks){
-      analysisStatus.textContent = 'ไม่พบใบหน้าในกล้อง กรุณาหันหน้าเข้ากล้องแล้วลองอีกครั้ง';
+      analysisStatus.textContent = 'ไม่พบใบหน้า กรุณาลองใหม่อีกครั้ง';
       return;
     }
-    const info = analyzeFaceShape(latestLandmarks);
+    const info = analyzeFaceShape(latestLandmarks, CANVAS_W, CANVAS_H);
     if(!info){
       analysisStatus.textContent = 'วิเคราะห์ไม่สำเร็จ ลองขยับให้เห็นใบหน้าชัดขึ้น';
       return;
     }
-    analysisStatus.textContent = '';
-    arShapeName.textContent = info.name;
+    
+    // Draw snapshot to preview box
+    analysisVideo.style.opacity = '0';
+    analysisCanvas.style.opacity = '1';
+    
+    if (currentSourceType === 'video') {
+       const vw = video.videoWidth || CANVAS_W;
+       const vh = video.videoHeight || CANVAS_H;
+       const scale = Math.max(CANVAS_W / vw, CANVAS_H / vh);
+       const sw = CANVAS_W / scale;
+       const sh = CANVAS_H / scale;
+       const sx = (vw - sw) / 2;
+       const sy = (vh - sh) / 2;
+       
+       analysisCtx.save();
+       analysisCtx.scale(-1, 1);
+       analysisCtx.drawImage(video, sx, sy, sw, sh, -CANVAS_W, 0, CANVAS_W, CANVAS_H);
+       analysisCtx.restore();
+    } else {
+       analysisCtx.drawImage(canvas, 0, 0, CANVAS_W, CANVAS_H);
+    }
+
+    analysisStatus.textContent = 'วิเคราะห์สำเร็จ!';
+    arShapeName.innerHTML = `${info.name} <span style="font-size:10px; color:#666;">${info.debugRatios}</span>`;
     arShapeDesc.textContent = info.desc;
     arRecName.textContent = info.rec;
     arRecDesc.textContent = info.recDesc;
     arNoseIcon.querySelector('path').setAttribute('d', NOSE_PATHS[info.noseKey]);
+    
+    // Update Symmetry Score Bar
+    const score = Math.round(info.symmetryScore);
+    symScore.textContent = score + '%';
+    symBar.style.width = score + '%';
+    // Change color based on score
+    symBar.style.background = score >= 90 ? 'var(--green)' : score >= 80 ? 'var(--bronze-soft)' : '#e0554f';
+    
     analysisPlaceholder.classList.add('hidden');
     analysisResult.classList.add('show');
+
+    // Remember this result and light up the "step 1 done" banner in the tool panel
+    lastAnalysisInfo = info;
+    analysisNudge.classList.add('done');
+    analysisNudge.querySelector('.analysis-nudge-text strong').textContent = `ขั้นตอนที่ 1 เสร็จแล้ว · ${info.name}`;
+    analysisNudgeMsg.textContent = `แนะนำทรงจมูก: ${info.rec} · ความสมมาตร ${Math.round(info.symmetryScore)}%`;
+    analysisNudgeBtn.textContent = '✨ ใช้ค่าที่แนะนำ';
+    
+    // Auto Apply Button Logic (in the analysis card itself)
+    document.getElementById('autoApplyBtn').onclick = () => applyRecommendedPreset(info);
+
+    // Small delay to trigger CSS transition for the progress bar
+    setTimeout(() => { symBar.style.width = score + '%'; }, 50);
+  }
+
+  analyzeSnapBtn.addEventListener('click', () => {
+    // If we are looking at an uploaded photo, switch back to camera first
+    if (currentSourceType === 'image') {
+       appUploadBtn.click(); // Switches main app back to camera mode
+       analysisPreviewBox.classList.remove('hidden');
+       analysisVideo.srcObject = video.srcObject;
+       analysisVideo.play().catch(e => console.error(e));
+       analysisVideo.style.opacity = '1';
+       analysisCanvas.style.opacity = '0';
+       analysisStatus.textContent = 'กำลังเปิดกล้อง... จัดใบหน้าให้ตรงแล้วกดปุ่มถ่ายภาพอีกครั้ง';
+       analyzeSnapBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> 📸 กดเพื่อถ่ายภาพ';
+       return;
+    }
+
+    if(!window.latestLandmarks) {
+      analysisStatus.textContent = 'ไม่พบใบหน้า กรุณาจัดหน้าให้อยู่ในกล้อง';
+      return;
+    }
+    const isShowingResult = analysisCanvas.style.opacity === '1';
+    
+    if ((analysisPreviewBox.classList.contains('hidden') || isShowingResult) && currentSourceType === 'video') {
+       analysisPreviewBox.classList.remove('hidden');
+       analysisVideo.srcObject = video.srcObject;
+       analysisVideo.play().catch(e => console.error(e));
+       analysisVideo.style.opacity = '1';
+       analysisCanvas.style.opacity = '0';
+       analysisStatus.textContent = 'จัดใบหน้าให้ตรง แล้วกดปุ่มถ่ายภาพอีกครั้ง';
+       analyzeSnapBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> 📸 กดเพื่อถ่ายภาพ';
+       return;
+    }
+
+    analysisStatus.textContent = 'กำลังเตรียมตัวถ่ายภาพ...';
+    analysisPreviewBox.classList.remove('hidden');
+    
+    if (currentSourceType === 'video') {
+      let count = 3;
+      analysisOverlay.textContent = count;
+      analysisOverlay.classList.remove('hidden');
+      analysisOverlay.style.opacity = '1';
+      
+      const interval = setInterval(() => {
+        count--;
+        if (count > 0) {
+           analysisOverlay.textContent = count;
+        } else if (count === 0) {
+           analysisOverlay.style.background = 'rgba(255,255,255,0.8)';
+           analysisOverlay.textContent = '';
+        } else {
+           clearInterval(interval);
+           analysisOverlay.style.opacity = '0';
+           setTimeout(() => { 
+             analysisOverlay.classList.add('hidden'); 
+             analysisOverlay.style.background = 'rgba(0,0,0,0.4)';
+           }, 200);
+           
+           runAnalysis();
+           analyzeSnapBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> ถ่ายภาพใหม่';
+        }
+      }, 800);
+    } else {
+      runAnalysis();
+    }
   });
+
+  analyzeUploadBtn.addEventListener('click', () => {
+     uploadTarget = 'analysis';
+     photoUpload.click();
+  });
+
+  // Manual Shape Override
+  document.getElementById('manualShapeSelect').addEventListener('change', (e) => {
+      const val = e.target.value;
+      if(!val) return;
+      const info = SHAPE_INFO[val];
+      if(!info) return;
+      
+      document.getElementById('arShapeName').innerHTML = `${info.name} <span style="font-size:10px; color:#666;">(Manual Override)</span>`;
+      document.getElementById('arShapeDesc').textContent = info.desc;
+      document.getElementById('arRecName').textContent = info.rec;
+      document.getElementById('arRecDesc').textContent = info.recDesc;
+      document.getElementById('arNoseIcon').querySelector('path').setAttribute('d', NOSE_PATHS[info.noseKey]);
+      document.getElementById('autoApplyBtn').dataset.preset = JSON.stringify(info.preset);
+  });
+
+  /* ---------- CUSTOM THREE.JS VIEWER LOGIC ---------- */
+  const threeBtn = document.getElementById('threeBtn');
+  const threeModal = document.getElementById('threeModal');
+  const closeThreeBtn = document.getElementById('closeThreeBtn');
+  const threeContainer = document.getElementById('threeContainer');
+  const countdownDiv = document.getElementById('countdownDiv');
+
+  let scene, camera3D, renderer, gltfModel, faceMesh3D, wireframeMesh;
+  let threeInitialized = false;
+  let staticLandmarks = null;
+  let staticVideoTexture = null;
+
+  function initThreeJS() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a1a);
+
+    const cw = threeContainer.clientWidth || window.innerWidth;
+    const ch = threeContainer.clientHeight || window.innerHeight;
+
+    camera3D = new THREE.PerspectiveCamera(25, cw / ch, 0.1, 1000);
+    camera3D.position.set(0, 0, 700);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+    renderer.setSize(cw, ch);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    threeContainer.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    dirLight.position.set(0, 50, 500);
+    scene.add(dirLight);
+
+    // Load High-Poly GLB with cross-protocol compatibility (supports local file:// and remote https://)
+    const loader = new THREE.GLTFLoader();
+    const primaryUrl = (window.location.protocol === 'file:') 
+      ? 'https://pupa-jamras.github.io/nosesim-project/nosesin/canonical_face.glb' 
+      : 'canonical_face.glb';
+
+    function setupGLTFMesh(gltf) {
+      gltfModel = gltf.scene;
+      
+      // Extract the mesh
+      gltfModel.traverse(function(child) {
+        if (child.isMesh) {
+          faceMesh3D = child;
+          
+          // Apply professional material
+          faceMesh3D.material = new THREE.MeshStandardMaterial({ 
+            color: 0xffffff, 
+            side: THREE.DoubleSide,
+            roughness: 0.3,
+            metalness: 0.2
+          });
+          
+          // Create wireframe overlay
+          const wireMat = new THREE.MeshBasicMaterial({
+            color: 0x00ffcc,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.3
+          });
+          wireframeMesh = new THREE.Mesh(faceMesh3D.geometry, wireMat);
+          wireframeMesh.scale.set(1.001, 1.001, 1.001);
+          gltfModel.add(wireframeMesh);
+        }
+      });
+      
+      // Center and scale
+      gltfModel.scale.set(1, 1, 1);
+      gltfModel.position.set(0, 0, 0);
+      scene.add(gltfModel);
+      
+      if (staticLandmarks) updateThreeJS();
+    }
+
+    loader.load(primaryUrl, setupGLTFMesh, undefined, function(error) {
+      console.warn('Could not load primary GLB from ' + primaryUrl + ', trying fallback...', error);
+      const fallbackUrl = (primaryUrl === 'canonical_face.glb') 
+        ? 'https://pupa-jamras.github.io/nosesim-project/nosesin/canonical_face.glb' 
+        : 'canonical_face.glb';
+      
+      loader.load(fallbackUrl, setupGLTFMesh, undefined, function(err2) {
+        console.error('All GLB load attempts failed:', err2);
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      if(!threeModal.classList.contains('hidden')) {
+        const cw = threeContainer.clientWidth || window.innerWidth;
+        const ch = threeContainer.clientHeight || window.innerHeight;
+        camera3D.aspect = cw / ch;
+        camera3D.updateProjectionMatrix();
+        renderer.setSize(cw, ch);
+      }
+    });
+
+    // Add OrbitControls for drag-to-rotate
+    const controls = new THREE.OrbitControls(camera3D, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.enablePan = false;
+    controls.minDistance = 200;
+    controls.maxDistance = 800;
+
+    animateThreeJS();
+  }
+
+    function updateThreeJS() {
+    if (!faceMesh3D || !staticLandmarks || !staticVideoTexture) return;
+    const geometry = faceMesh3D.geometry;
+    const positions = geometry.attributes.position.array;
+    const uvs = geometry.attributes.uv.array;
+
+    const scale = 400;
+    const imgAspect = staticVideoTexture.image.height / staticVideoTexture.image.width;
+
+    // We assume the GLB has exactly 468 vertices mapping to FaceMesh.
+    if (positions.length / 3 === 468) {
+        // First pass: compute centroid
+        let cx = 0, cy = 0, cz = 0;
+        for (let i = 0; i < 468; i++) {
+          const lm = staticLandmarks[i];
+          cx += lm.x; cy += lm.y; cz += lm.z;
+        }
+        cx /= 468; cy /= 468; cz /= 468;
+
+        // Second pass: set positions centered around origin and deform
+        const isComp = window.isComparing3D === true;
+        const bAdj = isComp ? 0 : parseInt(document.getElementById('tBridgeSlider').value, 10) / 100;
+        const wAdj = isComp ? 0 : parseInt(document.getElementById('tWidthSlider').value, 10) / 100;
+        const tAdj = isComp ? 0 : parseInt(document.getElementById('tTipSlider').value, 10) / 100;
+        const hAdj = isComp ? 0 : parseInt(document.getElementById('tHumpSlider').value, 10) / 100;
+        const aAdj = isComp ? 0 : parseInt(document.getElementById('tAlarSlider').value, 10) / 100;
+        const rAdj = isComp ? 0 : parseInt(document.getElementById('tRotationSlider').value, 10) / 100;
+        const pAdj = isComp ? 0 : parseInt(document.getElementById('tProjSlider').value, 10) / 100;
+
+        const noseTip = staticLandmarks[1];
+
+        for (let i = 0; i < 468; i++) {
+          const lm = staticLandmarks[i];
+          
+          let dx = lm.x - cx;
+          let dy = (lm.y - cy) * imgAspect; // Fix aspect ratio distortion!
+          let dz = (lm.z - cz) * 1.0; // Removed artificial depth boost (was 1.4) to match true facial proportions
+
+          // Nose deformation
+          const nDx = lm.x - noseTip.x;
+          const nDy = (lm.y - noseTip.y) * imgAspect;
+          const nDz = lm.z - noseTip.z;
+          const distFromTip = Math.sqrt(nDx*nDx + nDy*nDy + nDz*nDz);
+
+          if (distFromTip < 0.1) {
+             const weight = Math.pow(Math.max(0, 1.0 - (distFromTip / 0.1)), 1.5);
+             
+             // Bridge / Projection (pull Z)
+             dz -= pAdj * 0.04 * weight;
+             dz -= bAdj * 0.02 * weight;
+             
+             // Tip Size
+             if (Math.abs(nDy) < 0.03) {
+                 dx *= (1 + tAdj * weight * 0.4);
+                 dy *= (1 - tAdj * weight * 0.4);
+             }
+             
+             // Alar Width
+             if (nDy > 0.01 && Math.abs(nDx) > 0.015) {
+                 dx += Math.sign(nDx) * aAdj * 0.025 * weight;
+             }
+             
+             // Tip Rotation
+             if (distFromTip < 0.06) {
+                 dy -= rAdj * 0.025 * weight;
+                 dz -= rAdj * 0.015 * weight;
+             }
+             
+             // Hump
+             if (nDy < -0.02 && nDy > -0.09 && Math.abs(nDx) < 0.03) {
+                 dz -= hAdj * 0.035 * weight;
+             }
+             
+             // Bridge Width
+             if (nDy < -0.02 && Math.abs(nDx) > 0.01) {
+                 dx += Math.sign(nDx) * wAdj * 0.02 * weight;
+             }
+          }
+
+          positions[i * 3]     =  dx * scale;
+          positions[i * 3 + 1] = -dy * scale;
+          positions[i * 3 + 2] = -dz * scale;
+    
+          uvs[i * 2] = 1.0 - lm.x; 
+          uvs[i * 2 + 1] = 1.0 - lm.y;
+        }
+        geometry.attributes.position.needsUpdate = true;
+        geometry.attributes.uv.needsUpdate = true;
+        geometry.computeVertexNormals();
+    } else {
+        console.warn("GLB vertex count mismatch: " + (positions.length/3));
+    }
+
+    if (staticVideoTexture) {
+      faceMesh3D.material.map = staticVideoTexture;
+      faceMesh3D.material.needsUpdate = true;
+    }
+  }
+
+  function animateThreeJS() {
+    requestAnimationFrame(animateThreeJS);
+    if (!threeModal.classList.contains('hidden')) {
+      renderer.render(scene, camera3D);
+    }
+  }
+
+  let faceIdReqId = null;
+
+  const faceShapesData = {
+    oval: { name: '🥚 ทรงไข่', path: 'M 70,10 C 110,10 120,60 110,100 C 100,130 85,135 70,135 C 55,135 40,130 30,100 C 20,60 30,10 70,10 Z' },
+    round: { name: '🌕 หน้ากลม', path: 'M 70,15 C 115,15 125,65 115,100 C 105,125 90,130 70,130 C 50,130 35,125 25,100 C 15,65 25,15 70,15 Z' },
+    square: { name: '🔲 หน้าเหลี่ยม', path: 'M 70,15 C 110,15 115,50 115,90 C 115,120 100,125 70,130 C 40,125 25,120 25,90 C 25,50 30,15 70,15 Z' },
+    heart: { name: '💖 ทรงหัวใจ', path: 'M 70,15 C 120,10 125,55 110,90 C 95,120 80,135 70,135 C 60,135 45,120 30,90 C 15,55 20,10 70,15 Z' },
+    long: { name: '🥖 ทรงยาว', path: 'M 70,5 C 100,5 110,60 105,110 C 100,135 85,140 70,140 C 55,140 40,135 35,110 C 30,60 40,5 70,5 Z' },
+    diamond: { name: '💎 ทรงเพชร', path: 'M 70,15 C 95,15 125,60 110,95 C 95,125 80,135 70,135 C 60,135 45,125 30,95 C 15,60 45,15 70,15 Z' },
+    pear: { name: '🍐 ทรงลูกแพร์', path: 'M 70,20 C 95,20 100,50 115,100 C 125,130 90,135 70,135 C 50,135 15,130 25,100 C 40,50 45,20 70,20 Z' }
+  };
+  let currentFaceShape = 'oval';
+
+  function open3DScanModal() {
+    if (!latestLandmarks) {
+      alert('กรุณารอให้ระบบจับใบหน้าก่อนครับ');
+      return;
+    }
+
+    threeModal.classList.remove('hidden');
+    document.getElementById('faceIdOverlay').classList.remove('hidden');
+    threeContainer.style.opacity = '0';
+    document.getElementById('scanMetrics').classList.add('hidden');
+
+    const sCtx = document.getElementById('scanLiveCanvas').getContext('2d');
+    const ring = document.getElementById('faceIdRing');
+    const promptTitle = document.getElementById('faceIdPrompt');
+
+    const wrapper = document.getElementById('shapeSelectorWrapper');
+    const pathEl = document.getElementById('shapeGuidePath');
+    
+    // Render shape buttons
+    wrapper.innerHTML = '';
+    Object.keys(faceShapesData).forEach(key => {
+      const btn = document.createElement('button');
+      btn.textContent = faceShapesData[key].name;
+      btn.style.cssText = `background: ${key === currentFaceShape ? 'rgba(227,195,144,0.15)' : 'rgba(255,255,255,0.05)'}; border: 1px solid ${key === currentFaceShape ? '#e3c390' : '#2e3436'}; color: ${key === currentFaceShape ? '#e3c390' : '#9a958c'}; padding: 8px 14px; border-radius: 20px; font-size: 13px; font-family: 'Inter', sans-serif; white-space: nowrap; cursor: pointer; transition: all 0.2s; flex-shrink: 0;`;
+      
+      btn.onclick = () => {
+        currentFaceShape = key;
+        pathEl.setAttribute('d', faceShapesData[key].path);
+        // Update styles
+        Array.from(wrapper.children).forEach((child, idx) => {
+          const k = Object.keys(faceShapesData)[idx];
+          child.style.background = k === currentFaceShape ? 'rgba(227,195,144,0.15)' : 'rgba(255,255,255,0.05)';
+          child.style.borderColor = k === currentFaceShape ? '#e3c390' : '#2e3436';
+          child.style.color = k === currentFaceShape ? '#e3c390' : '#9a958c';
+        });
+      };
+      wrapper.appendChild(btn);
+    });
+    
+    // Set initial path
+    pathEl.setAttribute('d', faceShapesData[currentFaceShape].path);
+
+    // Video recording logic removed (Option B: Fast MediaPipe path)
+    let phase = -1; // -1: shape selection, 0: left, 1: right, 2: center, 3: countdown
+    let count = 3;
+    let lastTime = 0;
+    
+    // UI state for Step 1
+    const startScanBtn = document.getElementById('startScanPhaseBtn');
+    startScanBtn.style.display = 'block';
+    wrapper.style.display = 'flex';
+    document.getElementById('faceIdOverlayTitle').style.display = 'block';
+    document.getElementById('faceIdOverlayTitle').textContent = '1. เลือกโครงหน้าของคุณ';
+    
+    startScanBtn.onclick = () => {
+      phase = 0;
+      startScanBtn.style.display = 'none';
+      wrapper.style.display = 'none';
+      document.getElementById('faceIdOverlayTitle').style.display = 'none';
+    };
+
+    function loop(now) {
+      if (!threeModal || threeModal.classList.contains('hidden')) return;
+      if (document.getElementById('faceIdOverlay').classList.contains('hidden')) return;
+
+      faceIdReqId = requestAnimationFrame(loop);
+
+      // Draw live feed center crop
+      if (video.readyState >= 2) {
+        const minDim = Math.min(video.videoWidth, video.videoHeight);
+        const sx = (video.videoWidth - minDim) / 2;
+        const sy = (video.videoHeight - minDim) / 2;
+        sCtx.clearRect(0, 0, 280, 280);
+        sCtx.drawImage(video, sx, sy, minDim, minDim, 0, 0, 280, 280);
+      }
+
+      if (!latestLandmarks) return;
+      const p = i => latestLandmarks[i];
+      const nose = p(1), cheekL = p(234), cheekR = p(454);
+      const distL = Math.hypot(nose.x - cheekL.x, nose.y - cheekL.y);
+      const distR = Math.hypot(nose.x - cheekR.x, nose.y - cheekR.y);
+      let yaw = ((distR - distL) / ((distL + distR) || 1)) * 90;
+
+      if (phase === -1) {
+        promptTitle.innerHTML = 'ขยับใบหน้าให้ตรงกรอบ<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">และกดปุ่ม "ยืนยันและเริ่มสแกน"</span>';
+        ring.style.strokeDashoffset = 414.7; // Empty ring
+      } else if (phase === 0) {
+        promptTitle.innerHTML = 'เริ่มสแกนโครงหน้า 3D<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">หันหน้าไปทาง <span style="color:#e3c390">"ซ้าย"</span> ช้าๆ</span>';
+        ring.style.strokeDashoffset = 414.7 * 0.9;
+        if (yaw < -12) phase = 1; // Swapped to fix mirrored detection
+      } else if (phase === 1) {
+        promptTitle.innerHTML = 'เยี่ยมมาก!<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">คราวนี้หันไปทาง <span style="color:#e3c390">"ขวา"</span> ช้าๆ</span>';
+        ring.style.strokeDashoffset = 414.7 * 0.6;
+        if (yaw > 12) phase = 2; // Swapped to fix mirrored detection
+      } else if (phase === 2) {
+        promptTitle.innerHTML = 'เกือบเสร็จแล้ว<br><span style="font-size:15px; color:#9a958c; font-weight:normal;">หันกลับมา <span style="color:#e3c390">"มองตรง"</span> เพื่อถ่ายโครงหน้า</span>';
+        ring.style.strokeDashoffset = 414.7 * 0.3;
+        if (Math.abs(yaw) < 6) {
+           phase = 3;
+           lastTime = now;
+           count = 3;
+        }
+      } else if (phase === 3) {
+        ring.style.strokeDashoffset = 0;
+        if (now - lastTime > 800) {
+          lastTime = now;
+          count--;
+        }
+        if (count > 0) {
+          promptTitle.innerHTML = `<span style="font-size:46px; color:#c99a5b; font-family:'Fraunces',serif;">${count}</span><br><span style="font-size:15px; color:#9a958c; font-weight:normal;">อยู่นิ่งๆ...</span>`;
+        } else if (count === 0) {
+          count = -1;
+          
+          promptTitle.innerHTML = `<div class="w-10 h-10 border-4 border-[#6fae8a] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div><span style="font-size:15px; color:#6fae8a; font-weight:bold;">กำลังสร้างโครงหน้า 3 มิติ...</span>`;
+          
+          // Brief artificial delay for a polished UX feel
+          setTimeout(() => {
+              finishFaceIdScan();
+          }, 1200);
+        }
+      }
+    }
+
+    faceIdReqId = requestAnimationFrame(loop);
+  }
+
+  function finishFaceIdScan() {
+    staticLandmarks = JSON.parse(JSON.stringify(latestLandmarks));
+    
+    const snapCanvas = document.createElement('canvas');
+    snapCanvas.width = video.videoWidth || CANVAS_W;
+    snapCanvas.height = video.videoHeight || CANVAS_H;
+    const snapCtx = snapCanvas.getContext('2d');
+    
+    snapCtx.translate(snapCanvas.width, 0);
+    snapCtx.scale(-1, 1);
+    snapCtx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
+    
+    staticVideoTexture = new THREE.CanvasTexture(snapCanvas);
+    staticVideoTexture.colorSpace = THREE.SRGBColorSpace;
+
+    if (!threeInitialized) {
+      initThreeJS();
+      threeInitialized = true;
+    }
+    
+    if (window.bgPlaneMesh) {
+       scene.remove(window.bgPlaneMesh);
+       window.bgPlaneMesh.geometry.dispose();
+       window.bgPlaneMesh.material.dispose();
+       window.bgPlaneMesh = null;
+    }
+
+    if (faceMesh3D) updateThreeJS();
+    
+    // Calculate metrics
+    const calcDist = (p1, p2) => {
+       const dx = (staticLandmarks[p1].x - staticLandmarks[p2].x) * CANVAS_W;
+       const dy = (staticLandmarks[p1].y - staticLandmarks[p2].y) * CANVAS_H;
+       return Math.sqrt(dx*dx + dy*dy).toFixed(1);
+    };
+    
+    document.getElementById('triCount').textContent = '893';
+    document.getElementById('metricFaceW').textContent = calcDist(234, 454) + ' mm';
+    document.getElementById('metricFaceH').textContent = calcDist(10, 152) + ' mm';
+    document.getElementById('metricNoseL').textContent = calcDist(8, 2) + ' mm';
+    document.getElementById('metricJawW').textContent = calcDist(132, 361) + ' mm';
+    
+    document.getElementById('faceIdOverlay').classList.add('hidden');
+    document.getElementById('scanMetrics').classList.remove('hidden');
+    threeContainer.style.opacity = '1';
+
+    // Synchronize 2D slider values into 3D modal if set, and update price estimate
+    sync2DTo3DSliders();
+    update3DPriceEstimate();
+  }
+
+  threeBtn.addEventListener('click', open3DScanModal);
+
+  // Function to close 3D modal and go to nose editor
+  function close3DAndProceed() {
+    if (faceIdReqId) {
+      cancelAnimationFrame(faceIdReqId);
+      faceIdReqId = null;
+    }
+    // Sync adjustments made in 3D back to 2D
+    sync3DTo2DSliders();
+    threeModal.classList.add('hidden');
+    staticLandmarks = null;
+    if (staticVideoTexture) {
+      staticVideoTexture.dispose();
+      staticVideoTexture = null;
+    }
+  }
+
+  closeThreeBtn.addEventListener('click', close3DAndProceed);
+  document.getElementById('proceedToEditorBtn').addEventListener('click', close3DAndProceed);
+
+    // ==========================================
+  // NOSE SURGERY PRICE ESTIMATION ENGINE
+  // ==========================================
+  function calculateNoseProcedures(bridge, hump, alar, width, tip, rotation, proj) {
+    const items = [];
+
+    // 1. Bridge (ดั้ง/สันจมูก)
+    if (bridge > 15) {
+      if (bridge <= 45) {
+        items.push({
+          id: 'bridge_std',
+          name: 'เสริมสันจมูก (ซิลิโคน USA)',
+          min: 25000,
+          max: 45000,
+          detail: `ยกสัน +${bridge}%`
+        });
+      } else {
+        items.push({
+          id: 'bridge_high',
+          name: 'เสริมสันโด่ง (+เนื้อเยื่อเทียม)',
+          min: 45000,
+          max: 75000,
+          detail: `ยกโด่งพิเศษ +${bridge}%`
+        });
+      }
+    } else if (bridge < -15) {
+      items.push({
+        id: 'bridge_reduce',
+        name: 'ปรับลดความสูงสันจมูก',
+        min: 25000,
+        max: 45000,
+        detail: `ลดระดับ ${bridge}%`
+      });
+    }
+
+    // 2. Hump / Slope (ลดฮัมพ์ / ปรับสโลป)
+    if (hump > 15) {
+      if (hump <= 45) {
+        items.push({
+          id: 'hump_rasp',
+          name: 'ตะไบฮัมพ์ ปรับสโลปเนียน',
+          min: 15000,
+          max: 30000,
+          detail: `ตะไบฮัมพ์ ${hump}%`
+        });
+      } else {
+        items.push({
+          id: 'hump_resect',
+          name: 'ตอกฐานปรับแนวกระดูกฮัมพ์',
+          min: 30000,
+          max: 55000,
+          detail: `ปรับโครงสร้าง ${hump}%`
+        });
+      }
+    } else if (hump < -15) {
+      items.push({
+        id: 'slope_add',
+        name: 'ปรับแต่งสโลปหวานละมุน',
+        min: 15000,
+        max: 35000,
+        detail: `สโลป ${Math.abs(hump)}%`
+      });
+    }
+
+    // 3. Alar Width (ความกว้างปีกจมูก)
+    if (alar < -10) {
+      if (alar >= -35) {
+        items.push({
+          id: 'alar_soft',
+          name: 'เย็บกระชับปีก (เทคนิคซ่อนแผล)',
+          min: 18000,
+          max: 28000,
+          detail: `ลดปีก ${Math.abs(alar)}%`
+        });
+      } else {
+        items.push({
+          id: 'alar_full',
+          name: 'ตัดปีกจมูก (Alarplasty)',
+          min: 28000,
+          max: 45000,
+          detail: `ตัดปีกเรียว ${Math.abs(alar)}%`
+        });
+      }
+    } else if (alar > 15) {
+      items.push({
+        id: 'alar_expand',
+        name: 'ปรับมิติโครงสร้างปีกจมูก',
+        min: 20000,
+        max: 40000,
+        detail: `ขยายปีก +${alar}%`
+      });
+    }
+
+    // 4. Bridge Width (ความกว้างสัน)
+    if (Math.abs(width) > 12) {
+      items.push({
+        id: 'osteotomy',
+        name: 'ตอกยุบฐานกระดูกจมูกเรียว',
+        min: 20000,
+        max: 40000,
+        detail: width < 0 ? `บีบฐานกระดูก ${Math.abs(width)}%` : `ปรับฐาน ${width}%`
+      });
+    }
+
+    // 5. Tip Size (ขนาดปลายจมูก)
+    if (tip < -10) {
+      items.push({
+        id: 'tip_refine',
+        name: 'เย็บอินเตอร์โดม / แต่งปลาย',
+        min: 15000,
+        max: 35000,
+        detail: `ลดปลายมน ${Math.abs(tip)}%`
+      });
+    } else if (tip > 15) {
+      items.push({
+        id: 'tip_enlarge',
+        name: 'ปลูกถ่ายเนื้อเยื่อแต่งปลาย',
+        min: 18000,
+        max: 38000,
+        detail: `เติมเนื้อปลาย +${tip}%`
+      });
+    }
+
+    // 6. Tip Rotation (องศาเชิด)
+    if (Math.abs(rotation) > 12) {
+      items.push({
+        id: 'septal_extension',
+        name: 'ยืดผนังกั้นปลายเชิดพุ่ง',
+        min: 30000,
+        max: 65000,
+        detail: rotation > 0 ? `เชิด +${rotation}°` : `งุ้ม ${rotation}°`
+      });
+    }
+
+    // 7. Projection (ความพุ่ง / รองปลาย)
+    if (proj > 12) {
+      if (proj <= 40) {
+        items.push({
+          id: 'ear_cartilage',
+          name: 'รองปลายกระดูกอ่อนหลังหู',
+          min: 18000,
+          max: 35000,
+          detail: `ปลายพุ่ง +${proj}%`
+        });
+      } else {
+        items.push({
+          id: 'rib_cartilage',
+          name: 'ยืดปลายพุ่ง (กระดูกอ่อนซี่โครง)',
+          min: 50000,
+          max: 95000,
+          detail: `พุ่งพิเศษ +${proj}%`
+        });
+      }
+    } else if (proj < -15) {
+      items.push({
+        id: 'proj_reduce',
+        name: 'ปรับลดความพุ่งปลายจมูก',
+        min: 18000,
+        max: 35000,
+        detail: `ลดพุ่ง ${proj}%`
+      });
+    }
+
+    // กำหนดเทคนิคการผ่าตัดที่เหมาะสม
+    let technique = 'โครงสร้างเดิม (ไม่มีการผ่าตัด)';
+    if (items.length === 1 && !['osteotomy', 'septal_extension', 'rib_cartilage'].includes(items[0].id)) {
+      technique = 'หัตถการแบบปิด (Closed Rhinoplasty)';
+    } else if (items.length >= 2 && items.length <= 3 && !items.some(i => i.id === 'septal_extension' || i.id === 'rib_cartilage')) {
+      technique = 'เทคนิคกึ่งเปิด (Semi-Open Technique)';
+    } else if (items.length > 0) {
+      technique = 'ศัลยกรรมโครงสร้างโอเพ่น (Open Rhinoplasty)';
+    }
+
+    // คำนวณราคารวม (รวมแพ็กเกจหัตถการร่วม)
+    let totalMin = 0;
+    let totalMax = 0;
+    if (items.length > 0) {
+      const rawMin = items.reduce((sum, item) => sum + item.min, 0);
+      const rawMax = items.reduce((sum, item) => sum + item.max, 0);
+
+      if (items.length >= 3) {
+        totalMin = Math.round((rawMin * 0.82) / 1000) * 1000;
+        totalMax = Math.round((rawMax * 0.85) / 1000) * 1000;
+      } else if (items.length === 2) {
+        totalMin = Math.round((rawMin * 0.9) / 1000) * 1000;
+        totalMax = Math.round((rawMax * 0.9) / 1000) * 1000;
+      } else {
+        totalMin = rawMin;
+        totalMax = rawMax;
+      }
+    }
+
+    return {
+      items,
+      technique,
+      totalMin,
+      totalMax
+    };
+  }
+
+  function update2DPriceEstimate() {
+    const b = parseInt(bridgeSlider.value, 10) || 0;
+    const h = parseInt(humpSlider.value, 10) || 0;
+    const a = parseInt(alarSlider.value, 10) || 0;
+    const w = parseInt(widthSlider.value, 10) || 0;
+    const t = parseInt(tipSlider.value, 10) || 0;
+    const r = parseInt(rotationSlider.value, 10) || 0;
+    const p = parseInt(projectionSlider.value, 10) || 0;
+
+    const res = calculateNoseProcedures(b, h, a, w, t, r, p);
+    const val2D = document.getElementById('priceTotalVal2D');
+    const tag2D = document.getElementById('priceTechniqueTag2D');
+    const count2D = document.getElementById('priceItemCount2D');
+    if (!val2D || !tag2D || !count2D) return;
+
+    if (res.items.length === 0) {
+      val2D.textContent = '฿0';
+      tag2D.textContent = 'โครงสร้างเดิม';
+      count2D.textContent = '0 หัตถการ';
+    } else {
+      val2D.textContent = '฿' + res.totalMin.toLocaleString() + ' – ฿' + res.totalMax.toLocaleString();
+      tag2D.textContent = res.technique.split(' ')[0];
+      count2D.textContent = res.items.length + ' หัตถการประเมิน';
+    }
+  }
+
+  function update3DPriceEstimate() {
+    const b = parseInt(document.getElementById('tBridgeSlider').value, 10) || 0;
+    const h = parseInt(document.getElementById('tHumpSlider').value, 10) || 0;
+    const a = parseInt(document.getElementById('tAlarSlider').value, 10) || 0;
+    const w = parseInt(document.getElementById('tWidthSlider').value, 10) || 0;
+    const t = parseInt(document.getElementById('tTipSlider').value, 10) || 0;
+    const r = parseInt(document.getElementById('tRotationSlider').value, 10) || 0;
+    const p = parseInt(document.getElementById('tProjSlider').value, 10) || 0;
+
+    const res = calculateNoseProcedures(b, h, a, w, t, r, p);
+    
+    const priceValEl = document.getElementById('priceTotalVal');
+    const techniqueEl = document.getElementById('priceTechniqueTag');
+    const listEl = document.getElementById('priceItemsList');
+
+    if (!priceValEl || !techniqueEl || !listEl) return;
+
+    if (res.items.length === 0) {
+      priceValEl.textContent = '฿0';
+      techniqueEl.textContent = 'โครงสร้างเดิม (ไม่มีการผ่าตัด)';
+      techniqueEl.style.background = 'rgba(154, 149, 140, 0.15)';
+      techniqueEl.style.color = 'var(--muted)';
+      techniqueEl.style.borderColor = 'rgba(154, 149, 140, 0.3)';
+      listEl.innerHTML = '<div class="price-empty-hint">ยังไม่มีการปรับแต่งทรงจมูก<br>ขยับ Slider เพื่อดูการประเมินราคา</div>';
+    } else {
+      priceValEl.textContent = '฿' + res.totalMin.toLocaleString() + ' – ฿' + res.totalMax.toLocaleString();
+      techniqueEl.textContent = res.technique;
+      techniqueEl.style.background = 'rgba(201, 154, 91, 0.15)';
+      techniqueEl.style.color = 'var(--bronze-soft)';
+      techniqueEl.style.borderColor = 'rgba(201, 154, 91, 0.4)';
+
+      let html = '';
+      res.items.forEach(item => {
+        html += `
+          <div class="price-item">
+            <div class="price-item-name">
+              <span class="price-item-dot"></span>
+              <div>
+                <span style="color:var(--cream); font-weight:500;">${item.name}</span>
+                <span style="font-size:9px; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-left:3px;">(${item.detail})</span>
+              </div>
+            </div>
+            <div class="price-item-cost">฿${item.min.toLocaleString()} - ฿${item.max.toLocaleString()}</div>
+          </div>
+        `;
+      });
+      listEl.innerHTML = html;
+    }
+  }
+
+  function sync2DTo3DSliders() {
+    const pairs = [
+      ['bridgeSlider', 'tBridgeSlider', 'tBridgeVal'],
+      ['humpSlider', 'tHumpSlider', 'tHumpVal'],
+      ['alarSlider', 'tAlarSlider', 'tAlarVal'],
+      ['widthSlider', 'tWidthSlider', 'tWidthVal'],
+      ['tipSlider', 'tTipSlider', 'tTipVal'],
+      ['rotationSlider', 'tRotationSlider', 'tRotationVal'],
+      ['projectionSlider', 'tProjSlider', 'tProjVal']
+    ];
+    let hasNonZero2D = false;
+    pairs.forEach(([id2d]) => {
+      const el2d = document.getElementById(id2d);
+      if (el2d && parseInt(el2d.value, 10) !== 0) hasNonZero2D = true;
+    });
+
+    if (hasNonZero2D) {
+      pairs.forEach(([id2d, id3d, idVal]) => {
+        const el2d = document.getElementById(id2d);
+        const el3d = document.getElementById(id3d);
+        const elVal = document.getElementById(idVal);
+        if (el2d && el3d) {
+          el3d.value = el2d.value;
+          if (elVal) elVal.textContent = el2d.value + '%';
+        }
+      });
+    }
+  }
+
+  function sync3DTo2DSliders() {
+    const pairs = [
+      ['tBridgeSlider', 'bridgeSlider', 'bridgeValLabel'],
+      ['tHumpSlider', 'humpSlider', 'humpValLabel'],
+      ['tAlarSlider', 'alarSlider', 'alarValLabel'],
+      ['tWidthSlider', 'widthSlider', 'widthValLabel'],
+      ['tTipSlider', 'tipSlider', 'tipValLabel'],
+      ['tRotationSlider', 'rotationSlider', 'rotationValLabel'],
+      ['tProjSlider', 'projectionSlider', 'projectionValLabel']
+    ];
+    pairs.forEach(([id3d, id2d, idVal]) => {
+      const el3d = document.getElementById(id3d);
+      const el2d = document.getElementById(id2d);
+      const elVal = document.getElementById(idVal);
+      if (el3d && el2d) {
+        el2d.value = el3d.value;
+        if (elVal) elVal.textContent = el3d.value + '%';
+      }
+    });
+    update2DPriceEstimate();
+    if (typeof onSliderChange === 'function') onSliderChange();
+  }
+
+  // 3D Controls Listeners
+  const onThreeSliderChange = (e) => {
+    // Update value label
+    const id = e.target.id;
+    const val = parseInt(e.target.value, 10);
+    const labelId = id.replace('Slider', 'Val');
+    document.getElementById(labelId).textContent = val + '%';
+    
+    // Update 3D mesh
+    updateThreeJS();
+
+    // Update 3D Price Estimate
+    update3DPriceEstimate();
+  };
+
+  ['tBridgeSlider', 'tHumpSlider', 'tAlarSlider', 'tWidthSlider', 'tTipSlider', 'tRotationSlider', 'tProjSlider'].forEach(id => {
+    document.getElementById(id).addEventListener('input', onThreeSliderChange);
+  });
+
+  document.getElementById('threeAiBtn').addEventListener('click', () => {
+    if (!staticLandmarks) return;
+    
+    // Use the explicitly selected face shape for the heuristic
+    let preset = [0, 0, 0, 0, 0, 0, 0];
+    let msg = '';
+    
+    // Show toast notification
+    let toast = document.getElementById('aiToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'aiToast';
+      toast.style.cssText = 'position:absolute; top:80px; right:360px; z-index:10005; background:rgba(111,174,138,0.15); border:1px solid #6fae8a; color:#f2ece2; padding:16px 20px; border-radius:12px; font-family:"IBM Plex Mono",monospace; font-size:13px; backdrop-filter:blur(10px); transition:opacity 0.3s; opacity:0; pointer-events:none;';
+      document.getElementById('threeModal').appendChild(toast);
+    }
+    
+    switch(currentFaceShape) {
+      case 'oval': 
+        preset = [25, 5, -10, -5, -5, 10, 20]; msg = 'ใบหน้าทรงไข่ (Oval)'; break;
+      case 'round': 
+        preset = [35, 10, -20, -15, -10, 5, 25]; msg = 'หน้ากลม (Round)'; break;
+      case 'square': 
+        preset = [25, 5, -15, -10, -5, 15, 20]; msg = 'หน้าเหลี่ยม (Square)'; break;
+      case 'heart': 
+        preset = [20, 0, -10, -5, 5, 10, 15]; msg = 'ทรงหัวใจ (Heart)'; break;
+      case 'long': 
+        preset = [15, -10, 10, 5, 10, 15, 15]; msg = 'ทรงยาว (Long)'; break;
+      case 'diamond': 
+        preset = [30, 5, -15, -10, -10, 5, 25]; msg = 'ทรงเพชร (Diamond)'; break;
+      case 'pear': 
+        preset = [35, 10, -20, -15, -5, 5, 20]; msg = 'ทรงลูกแพร์ (Pear)'; break;
+    }
+    
+    toast.innerHTML = `<strong style="color:#6fae8a;">✨ AI วิเคราะห์รูปทรงที่คุณเลือก: ${msg}</strong><br><span style="color:#9a958c; font-size:11px;">ระบบปรับทรงจมูกให้รับกับโครงหน้า ${msg.split(' ')[0]} แบบอัตโนมัติ</span>`;
+    
+    toast.style.opacity = '1';
+    setTimeout(() => { toast.style.opacity = '0'; }, 4000);
+
+    const sliders = ['tBridge', 'tHump', 'tAlar', 'tWidth', 'tTip', 'tRotation', 'tProj'];
+    sliders.forEach((id, index) => {
+      const slider = document.getElementById(id + 'Slider');
+      slider.value = preset[index];
+      document.getElementById(id + 'Val').textContent = preset[index] + '%';
+    });
+    
+    updateThreeJS();
+    update3DPriceEstimate();
+  });
+
+  document.getElementById('toggleWireframeBtn').addEventListener('click', () => {
+    if (wireframeMesh) {
+      wireframeMesh.visible = !wireframeMesh.visible;
+      document.getElementById('toggleWireframeBtn').innerHTML = wireframeMesh.visible 
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:6px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> ซ่อนเส้นโครงตาข่าย (Wireframe)`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:6px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> แสดงเส้นโครงตาข่าย (Wireframe)`;
+    }
+  });
+
+  document.getElementById('threeCaptureBtn').addEventListener('click', () => {
+    if (!renderer) return;
+    
+    // Create composite canvas to blend background and 3D mesh
+    const link = document.createElement('a');
+    const compCanvas = document.createElement('canvas');
+    compCanvas.width = renderer.domElement.width;
+    compCanvas.height = renderer.domElement.height;
+    const ctx = compCanvas.getContext('2d');
+    
+    // Fill background
+    ctx.fillStyle = '#0d1012';
+    ctx.fillRect(0, 0, compCanvas.width, compCanvas.height);
+    
+    // Draw 3D canvas on top
+    ctx.drawImage(renderer.domElement, 0, 0);
+    
+    link.download = 'nosesim_3d_capture_' + Date.now() + '.png';
+    link.href = compCanvas.toDataURL('image/png');
+    link.click();
+  });
+
+  // 3D Compare Button
+  window.isComparing3D = false;
+  const threeCompareBtn = document.getElementById('threeCompareBtn');
+  const startCompare3D = (e) => { e.preventDefault(); window.isComparing3D = true; updateThreeJS(); };
+  const stopCompare3D = (e) => { e.preventDefault(); window.isComparing3D = false; updateThreeJS(); };
+  
+  threeCompareBtn.addEventListener('mousedown', startCompare3D);
+  threeCompareBtn.addEventListener('mouseup', stopCompare3D);
+  threeCompareBtn.addEventListener('mouseleave', stopCompare3D);
+  threeCompareBtn.addEventListener('touchstart', startCompare3D);
+  threeCompareBtn.addEventListener('touchend', stopCompare3D);
+
 })();
 </script>
-
 </body>
 </html>
